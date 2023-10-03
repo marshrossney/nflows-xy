@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "quantum-rotor"
+version = "0.1.0"
+description = "Trivialising maps for the one-dimensional quantum rotor"
+authors = ["marshrossney <17361029+marshrossney@users.noreply.github.com>"]
+readme = "README.md"
+packages = [{include = "quantum_rotor"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+torch = "2"
+ipython = "^8.16.1"
+jupyterlab = "^4.0.6"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
