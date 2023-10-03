@@ -9,7 +9,7 @@ from quantum_rotor.flows.autoregressive import AutoregressiveSigmoidFlow
 from quantum_rotor.action import pbc_action
 
 N_LATTICE = 10
-BETA = 0.01
+BETA = 1.
 N_BATCH = 5000
 N_TRAIN = 1000
 
@@ -50,7 +50,7 @@ def main():
 
     flow = AutoregressiveSigmoidFlow(
         n_lattice=N_LATTICE,
-        n_mixture=4,
+        n_mixture=6,
         net_shape=[16],
         net_activation="Tanh",
         weighted=True,

@@ -3,6 +3,7 @@ import torch.nn as nn
 
 
 from quantum_rotor.transforms import build_sigmoid_module
+from quantum_rotor.utils import mod_2pi, as_vector
 
 Tensor = torch.Tensor
 
@@ -12,18 +13,46 @@ class AutoregressiveFlow(nn.Module):
         super().__init__()
         self.transforms = nn.ModuleList(transforms)
 
-    def forward(self, φ: Tensor) -> tuple[Tensor, Tensor]:
-        assert φ.shape[1] == len(self.transforms) + 1
+    def _forward_v1(self, φ):
+        φ0, φ = φ.tensor_split([1], dim=1)
+        φ = mod_2pi(φ - φ0)
 
+        θ = torch.zeros_like(φ0)
         ldj = 0.0
-        θ, φ = φ.tensor_split([1], dim=1)
         for φ_t, f_t in zip(φ.split(1, dim=1), self.transforms):
-            θ_t, ldj_t = f_t(θ.transpose(1, 2))(φ_t)
+            context = as_vector(θ.transpose(1, 2))
+
+            θ_t, ldj_t = f_t(context)(φ_t)
+
+            θ = torch.cat([θ, θ_t], dim=1)
+            ldj += ldj_t
+
+        θ = mod_2pi(θ + φ0)
+
+        return θ, ldj
+
+    def _forward_v2(self, φ: Tensor) -> tuple[Tensor, Tensor]:
+        φ0, φ = φ.tensor_split([1], dim=1)
+
+        θ = φ0
+        ldj = 0.0
+        for φ_t, f_t in zip(φ.split(1, dim=1), self.transforms):
+            _, θ_tm1 = θ.tensor_split([-1], dim=1)
+
+            context = as_vector((θ - θ_tm1).transpose(1, 2))
+
+            φ_t = mod_2pi(φ_t - θ_tm1)
+            θ_t, ldj_t = f_t(context)(φ_t)
+            θ_t = mod_2pi(θ_t + θ_tm1)
 
             θ = torch.cat([θ, θ_t], dim=1)
             ldj += ldj_t
 
         return θ, ldj
+
+    def forward(self, φ: Tensor) -> tuple[Tensor, Tensor]:
+        assert φ.shape[1] == len(self.transforms) + 1
+        return self._forward_v2(φ)
 
 
 class AutoregressiveSigmoidFlow(AutoregressiveFlow):
