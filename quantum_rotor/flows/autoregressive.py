@@ -50,9 +50,52 @@ class AutoregressiveFlow(nn.Module):
 
         return θ, ldj
 
+    def _forward_v3(self, φ: Tensor) -> tuple[Tensor, Tensor]:
+        φ0, φ = φ.tensor_split([1], dim=1)
+
+        θ = φ0
+        ldj = 0.0
+        for φ_t, f_t in zip(φ.split(1, dim=1), self.transforms):
+            _, θ_tm1 = θ.tensor_split([-1], dim=1)
+
+            U = θ[:, 1:] - θ[:, :-1]
+
+            context = as_vector(U.transpose(1, 2))  # .sum(dim=-1, keepdim=True))
+
+            φ_t = mod_2pi(φ_t - θ_tm1)
+            θ_t, ldj_t = f_t(context)(φ_t)
+            θ_t = mod_2pi(θ_t + θ_tm1)
+
+            θ = torch.cat([θ, θ_t], dim=1)
+            ldj += ldj_t
+
+        return θ, ldj
+    
+    def _forward_v4(self, φ: Tensor) -> tuple[Tensor, Tensor]:
+        """Same as v3 but just pass the sum of links"""
+        φ0, φ = φ.tensor_split([1], dim=1)
+
+        θ = φ0
+        ldj = 0.0
+        for φ_t, f_t in zip(φ.split(1, dim=1), self.transforms):
+            _, θ_tm1 = θ.tensor_split([-1], dim=1)
+
+            U = θ[:, 1:] - θ[:, :-1]
+
+            context = as_vector(U.transpose(1, 2).sum(dim=-1, keepdim=True))
+
+            φ_t = mod_2pi(φ_t - θ_tm1)
+            θ_t, ldj_t = f_t(context)(φ_t)
+            θ_t = mod_2pi(θ_t + θ_tm1)
+
+            θ = torch.cat([θ, θ_t], dim=1)
+            ldj += ldj_t
+
+        return θ, ldj
+
     def forward(self, φ: Tensor) -> tuple[Tensor, Tensor]:
         assert φ.shape[1] == len(self.transforms) + 1
-        return self._forward_v2(φ)
+        return self._forward_v4(φ)
 
 
 class AutoregressiveSigmoidFlow(AutoregressiveFlow):

@@ -6,9 +6,10 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 from tqdm import trange
 
 from quantum_rotor.flows.autoregressive import AutoregressiveSigmoidFlow
+from quantum_rotor.flows.coupling import SigmoidCouplingFlow
 from quantum_rotor.action import pbc_action
 
-N_LATTICE = 10
+N_LATTICE = 12
 BETA = 1.
 N_BATCH = 5000
 N_TRAIN = 1000
@@ -46,7 +47,7 @@ def train(flow):
 
 
 
-def main():
+def auto():
 
     flow = AutoregressiveSigmoidFlow(
         n_lattice=N_LATTICE,
@@ -61,6 +62,21 @@ def main():
     train(flow)
 
 
+def coupling():
+    flow = SigmoidCouplingFlow(
+        n_blocks=1,
+        n_lattice=N_LATTICE,
+        n_mixture=6,
+        net_shape=[16],
+        net_activation="Tanh",
+        weighted=True,
+    )
+    u = uniform(N_BATCH, N_LATTICE, 1)
+    φ, ldj = flow(u)
+
+    train(flow)
 
 if __name__ == "__main__":
-    main()
+    auto()
+    #coupling()
+
