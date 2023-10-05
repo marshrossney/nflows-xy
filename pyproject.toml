@@ -13,6 +13,8 @@ ipython = "^8.16.1"
 jupyterlab = "^4.0.6"
 numpy = "^1.26.0"
 tqdm = "^4.66.1"
+pandas = "^2.1.1"
+jsonargparse = {extras = ["signatures"], version = "^4.25.0"}
 
 
 [tool.poetry.group.dev.dependencies]

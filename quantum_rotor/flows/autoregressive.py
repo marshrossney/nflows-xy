@@ -70,7 +70,7 @@ class AutoregressiveFlow(nn.Module):
             ldj += ldj_t
 
         return θ, ldj
-    
+
     def _forward_v4(self, φ: Tensor) -> tuple[Tensor, Tensor]:
         """Same as v3 but just pass the sum of links"""
         φ0, φ = φ.tensor_split([1], dim=1)

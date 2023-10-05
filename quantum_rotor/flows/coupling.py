@@ -49,7 +49,7 @@ class CouplingFlow(nn.Module):
 
         o --- o ~~~ x --- o --- o
            F1    A     P     F2
-        
+
         A, P, F = active, passive frozen link variables
         U_x = φ_x - φ_{x-1}
         """
