@@ -1,3 +1,4 @@
+from enum import Enum
 from itertools import chain
 import warnings
 
@@ -5,7 +6,41 @@ import torch.nn as nn
 
 warnings.filterwarnings("ignore", message="Lazy")
 
-Activation = str
+
+class StrEnum(str, Enum):
+    def __str__(self):
+        return str(self.name)
+
+    def __eq__(self, other):
+        return str(self) == str(other)
+
+
+class Activation(StrEnum):
+    Identity = 0
+    ELU = 1
+    Hardshrink = 2
+    Hardsigmoid = 3
+    Hardtanh = 4
+    Hardswish = 5
+    LeakyReLU = 6
+    LogSigmoid = 7
+    PReLU = 8
+    ReLU = 9
+    ReLU6 = 10
+    RReLU = 11
+    SELU = 12
+    CELU = 13
+    GELU = 14
+    Sigmoid = 15
+    SiLU = 16
+    Mish = 17
+    Softplus = 18
+    Softshrink = 19
+    Softsign = 20
+    Tanh = 21
+    Tanhshrink = 22
+    Threshold = 23
+    GLU = 24
 
 
 def permute_io(net: nn.Module) -> nn.Module:
@@ -35,7 +70,9 @@ def build_cnn(
         kernel_radius = [kernel_radius for _ in channels]
 
     conv_layers = [
-        nn.LazyConv1d(n, kernel_size=(2 * r + 1), padding=r, padding_mode="circular")
+        nn.LazyConv1d(
+            n, kernel_size=(2 * r + 1), padding=r, padding_mode="circular"
+        )
         for n, r in zip(channels, kernel_radius, strict=True)
     ]
     activations = [getattr(nn, str(activation))() for _ in conv_layers]

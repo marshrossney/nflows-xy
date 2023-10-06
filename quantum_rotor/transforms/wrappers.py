@@ -7,7 +7,9 @@ import torch
 from quantum_rotor.utils import mod_2pi
 
 Tensor: TypeAlias = torch.Tensor
-TransformFunc: TypeAlias = Callable[[Tensor, Tensor, Any, ...], tuple[Tensor, Tensor]]
+TransformFunc: TypeAlias = Callable[
+    [Tensor, Tensor, Any, ...], tuple[Tensor, Tensor]
+]
 Transform: TypeAlias = Callable[Tensor, tuple[Tensor, Tensor]]
 
 
@@ -44,7 +46,9 @@ def mixture_(
 
 
 def mix_with_identity_(transform: TransformFunc) -> TransformFunc:
-    def identity_mixture(x: Tensor, params: Tensor, **kwargs) -> tuple[Tensor, Tensor]:
+    def identity_mixture(
+        x: Tensor, params: Tensor, **kwargs
+    ) -> tuple[Tensor, Tensor]:
         params, c = params.tensor_split([-1], dim=-1)
         # assert torch.all((c >= 0) and (c <= 1))
 

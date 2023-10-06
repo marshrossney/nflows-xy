@@ -20,7 +20,9 @@ class UnivariateTransformModule(nn.Module):
     ):
         super().__init__()
         self.transform_factory = transform_factory
-        self.context_fn = context_fn if context_fn is not None else nn.Identity()
+        self.context_fn = (
+            context_fn if context_fn is not None else nn.Identity()
+        )
 
         self._hooks = {
             wrapper.__name__: self.register_forward_hook(make_hook(wrapper))
@@ -63,4 +65,6 @@ def build_sigmoid_module(
         ramp_pow=ramp_pow,
     )
     wrappers = [sum_log_gradient_]
-    return _build_univariate_module(Transform, net_shape, net_activation, wrappers)
+    return _build_univariate_module(
+        Transform, net_shape, net_activation, wrappers
+    )

@@ -17,7 +17,9 @@ from .wrappers import (
 from .utils import normalise_weights
 
 Tensor: TypeAlias = torch.Tensor
-TransformFunc: TypeAlias = Callable[[Tensor, Tensor, Any, ...], tuple[Tensor, Tensor]]
+TransformFunc: TypeAlias = Callable[
+    [Tensor, Tensor, Any, ...], tuple[Tensor, Tensor]
+]
 Transform: TypeAlias = Callable[Tensor, tuple[Tensor, Tensor]]
 
 

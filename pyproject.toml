@@ -1,3 +1,7 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
 [tool.poetry]
 name = "quantum-rotor"
 version = "0.1.0"
@@ -9,18 +13,33 @@ packages = [{include = "quantum_rotor"}]
 [tool.poetry.dependencies]
 python = "3.10.7"
 torch = "2"
-ipython = "^8.16.1"
-jupyterlab = "^4.0.6"
 numpy = "^1.26.0"
 tqdm = "^4.66.1"
 pandas = "^2.1.1"
 jsonargparse = {extras = ["signatures"], version = "^4.25.0"}
+matplotlib = "^3.8.0"
 
 
 [tool.poetry.group.dev.dependencies]
+ipython = "^8.16.1"
 black = "^23.9.1"
 flake8 = "^6.1.0"
 
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[tool.poetry.scripts]
+rotor = "quantum_rotor.scripts.cli:cli"
+
+[tool.black]
+line-length = 79
+target-version = ['py310']
+exclude = '''
+(
+  /(
+      \.git
+    | \.github
+    | \.pytest_cache
+    | \.venv
+    | __pycache__
+    | workbench
+  )/
+)
+'''
