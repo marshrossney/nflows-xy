@@ -110,4 +110,4 @@ def hmc(
     logger.info(f"Acceptance rate: {r_accept:.5f}")
     logger.info(f"exp(-ΔH) - 1 = {(mean - 1):e} ± {stderr:e}")
 
-    return sample
+    return sample.transpose(0, 1)

@@ -4,6 +4,7 @@ from jsonargparse.typing import Path_dw
 from quantum_rotor.action import PullbackAction
 from quantum_rotor.hmc import hmc
 from quantum_rotor.scripts.io import load_model
+from quantum_rotor.topology import top_charge, autocorrelations
 
 parser = ArgumentParser(prog="hmc")
 
@@ -18,4 +19,9 @@ def main(config: Namespace) -> None:
 
     action = PullbackAction(model.target, model.flow)
 
-    _ = hmc(action, **config.hmc)
+    sample = hmc(action, **config.hmc)
+
+    Q = top_charge(sample)
+    Γ = autocorrelations(Q)
+
+    print(Γ.integrated)
