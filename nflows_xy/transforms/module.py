@@ -6,7 +6,7 @@ import torch.nn as nn
 from nflows_xy.nn import build_fnn
 
 from .sigmoid import build_sigmoid_transform
-from .wrappers import sum_log_gradient_, make_hook
+from .wrappers import sum_log_gradient_, dilute_, make_hook
 
 Tensor = torch.Tensor
 
@@ -67,4 +67,16 @@ def build_sigmoid_module(
     wrappers = [sum_log_gradient_]
     return _build_univariate_module(
         Transform, net_shape, net_activation, wrappers
+    )
+
+
+def dilute_module(
+    module: UnivariateTransformModule,
+    dilution_factor: float,
+) -> None:
+    assert isinstance(module, UnivariateTransformModule)
+
+    module.register_forward_hook(
+        make_hook(dilute_, factor=dilution_factor),
+        prepend=True,
     )

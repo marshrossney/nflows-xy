@@ -94,5 +94,6 @@ def test(
             )
 
     metrics = pd.DataFrame(metrics)
+    metrics = metrics.apply(pd.to_numeric)
 
     return metrics

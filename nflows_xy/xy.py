@@ -45,14 +45,16 @@ class Action2d(Action):
 
     def __call__(self, φ: Tensor) -> Tensor:
         return -self.beta * (
-                torch.cos(φ - φ.roll(+1, -3)).sum(dim=(-3, -2))
-                + torch.cos(φ - φ.roll(+1, -2)).sum(dim=(-3, -2))
+            torch.cos(φ - φ.roll(+1, -3)).sum(dim=(-3, -2))
+            + torch.cos(φ - φ.roll(+1, -2)).sum(dim=(-3, -2))
         )
 
     def grad(self, φ: Tensor) -> Tensor:
         return -self.beta * (
-            -torch.sin(φ - φ.roll(+1, -3)) + torch.sin(φ.roll(-1, -3) - φ)
-            -torch.sin(φ - φ.roll(+1, -2)) + torch.sin(φ.roll(-1, -2) - φ)
+            -torch.sin(φ - φ.roll(+1, -3))
+            + torch.sin(φ.roll(-1, -3) - φ)
+            - torch.sin(φ - φ.roll(+1, -2))
+            + torch.sin(φ.roll(-1, -2) - φ)
         )
 
 

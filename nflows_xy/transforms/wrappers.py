@@ -110,6 +110,21 @@ def mask_outside_interval_(
     return wrapped_transform
 
 
+def dilute_(transform, factor: float):
+    assert (factor >= 0) and (factor <= 1)
+    c = 1 - factor
+
+    def diluted_transform(x: Tensor, *args, **kwargs):
+        y, dydx = transform(x, *args, **kwargs)
+
+        y = c * y + (1 - c) * x
+        dydx = c * dydx + (1 - c)
+
+        return y, dydx
+
+    return diluted_transform
+
+
 def sum_log_gradient_(transform):
     def wrapped_transform(x: Tensor, *args, **kwargs):
         y, grad = transform(x, *args, **kwargs)
@@ -119,8 +134,8 @@ def sum_log_gradient_(transform):
     return wrapped_transform
 
 
-def make_hook(wrapper):
+def make_hook(wrapper, **kwargs):
     def hook(module, inputs, outputs):
-        return wrapper(outputs)
+        return wrapper(outputs, **kwargs)
 
     return hook

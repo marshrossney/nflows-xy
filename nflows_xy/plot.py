@@ -1,12 +1,42 @@
+from math import pi as π
+
 import matplotlib.pyplot as plt
 import torch
 
 from nflows_xy.autocorr import ComputedAutocorrelations
+from nflows_xy.utils import mod_2pi
 
 Tensor = torch.Tensor
 Figure = plt.Figure
 
 plt.style.use("seaborn-v0_8-darkgrid")
+
+
+def plot_spins_1d(φ: Tensor, bins: int = 35) -> Figure:
+    φ = φ.detach()
+    φ0, φ = φ.tensor_split([1], dim=-2)
+    φ = mod_2pi(φ - φ0 + π) - π  # [-π, π]
+
+    fig = plt.figure(figsize=(7, 4))
+    ax1 = fig.add_subplot(121)
+    ax2 = fig.add_subplot(122, projection="polar")
+    ax2.set_xticklabels([])
+    ax2.set_yticklabels([])
+    fig.suptitle("Angles")
+    ax1.set_ylabel("prob")
+    ax1.set_xlabel(r"$\phi_t - \phi_0$")
+
+    for t, φ_t in enumerate(φ.split(1, dim=-2)):
+        hist, bin_edges = torch.histogram(
+            φ_t.flatten(), bins=bins, range=(-π, π), density=True
+        )
+        ax1.step(bin_edges[1:], hist, label=f"$t={t+1}$")
+        ax2.step(bin_edges[1:], hist)
+
+    fig.legend()
+    fig.tight_layout()
+
+    return fig
 
 
 def plot_topological_charge(

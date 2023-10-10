@@ -47,9 +47,7 @@ def get_meta() -> str:
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
     version = get_version()
     commit = get_commit()
-    ret = (
-        f"# Run on {timestamp} using nflows_xy v{version}, commit {commit}"
-    )
+    ret = f"# Run on {timestamp} using nflows_xy v{version}, commit {commit}"
     return ret
 
 
