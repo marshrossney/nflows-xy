@@ -3,7 +3,7 @@ from typing import Callable
 import torch
 import torch.nn as nn
 
-from quantum_rotor.nn import build_fnn
+from nflows_xy.nn import build_fnn
 
 from .sigmoid import build_sigmoid_transform
 from .wrappers import sum_log_gradient_, make_hook

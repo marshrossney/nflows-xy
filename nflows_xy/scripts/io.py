@@ -7,7 +7,7 @@ import subprocess
 import torch
 import yaml
 
-from quantum_rotor.core import FlowBasedSampler
+from nflows_xy.core import FlowBasedSampler
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -18,7 +18,7 @@ META_FILE = "metadata.yaml"
 
 
 def get_version():
-    return importlib.metadata.version("quantum_rotor")
+    return importlib.metadata.version("nflows_xy")
 
 
 def get_commit():
@@ -48,7 +48,7 @@ def get_meta() -> str:
     version = get_version()
     commit = get_commit()
     ret = (
-        f"# Run on {timestamp} using quantum_rotor v{version}, commit {commit}"
+        f"# Run on {timestamp} using nflows_xy v{version}, commit {commit}"
     )
     return ret
 
@@ -78,7 +78,7 @@ def save_model(
 def load_model(path: str | Path) -> FlowBasedSampler:
     path = path if isinstance(path, Path) else Path(path)
 
-    from quantum_rotor.scripts.train import parser
+    from nflows_xy.scripts.train import parser
 
     config_file = path / CONFIG_FILE
     config = parser.parse_path(config_file)

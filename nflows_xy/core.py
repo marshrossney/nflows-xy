@@ -4,8 +4,8 @@ from typing import NamedTuple
 import torch
 import torch.nn as nn
 
-from quantum_rotor.xy import Action
-from quantum_rotor.flows import Flow
+from nflows_xy.xy import Action
+from nflows_xy.flows import Flow
 
 Tensor = torch.Tensor
 

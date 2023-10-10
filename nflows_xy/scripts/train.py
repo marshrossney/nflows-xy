@@ -11,10 +11,10 @@ from jsonargparse import (
 from jsonargparse.typing import Path_dc
 import torch
 
-from quantum_rotor.core import Flow, FlowBasedSampler
-from quantum_rotor.xy import action
-from quantum_rotor.train import train
-from quantum_rotor.scripts.io import save_model
+from nflows_xy.core import Flow, FlowBasedSampler
+from nflows_xy.xy import action
+from nflows_xy.train import train
+from nflows_xy.scripts.io import save_model
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

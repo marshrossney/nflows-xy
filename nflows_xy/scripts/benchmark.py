@@ -4,10 +4,10 @@ from jsonargparse import (
     Namespace,
 )
 
-from quantum_rotor.hmc import hmc
-from quantum_rotor.autocorr import autocorrelations
-from quantum_rotor.xy import Action, top_charge
-from quantum_rotor.plot import plot_topological_charge
+from nflows_xy.hmc import hmc
+from nflows_xy.autocorr import autocorrelations
+from nflows_xy.xy import Action, top_charge
+from nflows_xy.plot import plot_topological_charge
 
 
 parser = ArgumentParser(prog="benchmark")

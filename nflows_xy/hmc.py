@@ -4,8 +4,8 @@ import logging
 import torch
 from tqdm import trange
 
-from quantum_rotor.xy import Action
-from quantum_rotor.utils import mod_2pi
+from nflows_xy.xy import Action
+from nflows_xy.utils import mod_2pi
 
 Tensor = torch.Tensor
 

@@ -3,12 +3,12 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "quantum-rotor"
+name = "nflows-xy"
 version = "0.1.0"
-description = "Trivialising maps for the one-dimensional quantum rotor"
+description = "Flow-based trivialising maps for the classical XY model"
 authors = ["marshrossney <17361029+marshrossney@users.noreply.github.com>"]
 readme = "README.md"
-packages = [{include = "quantum_rotor"}]
+packages = [{include = "nflows_xy"}]
 
 [tool.poetry.dependencies]
 python = "3.10.7"
@@ -26,7 +26,7 @@ flake8 = "^6.1.0"
 pytest = "^7.4.2"
 
 [tool.poetry.scripts]
-rotor = "quantum_rotor.scripts.cli:cli"
+nflows-xy = "nflows_xy.scripts.cli:cli"
 
 [tool.black]
 line-length = 79

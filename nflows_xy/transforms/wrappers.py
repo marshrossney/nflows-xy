@@ -4,7 +4,7 @@ from typing import Any, Callable, TypeAlias
 
 import torch
 
-from quantum_rotor.utils import mod_2pi
+from nflows_xy.utils import mod_2pi
 
 Tensor: TypeAlias = torch.Tensor
 TransformFunc: TypeAlias = Callable[

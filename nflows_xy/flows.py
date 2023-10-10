@@ -4,8 +4,8 @@ from itertools import cycle
 import torch
 import torch.nn as nn
 
-from quantum_rotor.transforms import build_sigmoid_module
-from quantum_rotor.utils import mod_2pi, as_vector
+from nflows_xy.transforms import build_sigmoid_module
+from nflows_xy.utils import mod_2pi, as_vector
 
 Tensor = torch.Tensor
 

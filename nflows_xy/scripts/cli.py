@@ -1,9 +1,9 @@
 from jsonargparse import ArgumentParser
 
-import quantum_rotor.scripts.train as train
-import quantum_rotor.scripts.test as test
-import quantum_rotor.scripts.hmc as hmc
-import quantum_rotor.scripts.benchmark as benchmark
+import nflows_xy.scripts.train as train
+import nflows_xy.scripts.test as test
+import nflows_xy.scripts.hmc as hmc
+import nflows_xy.scripts.benchmark as benchmark
 
 parser = ArgumentParser(prog="cli")
 

@@ -2,7 +2,7 @@ from math import pi as π
 
 import torch
 
-from quantum_rotor.xy import action
+from nflows_xy.xy import action
 
 
 def test_action_grad_agrees_with_autograd():

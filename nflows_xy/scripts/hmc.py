@@ -1,11 +1,11 @@
 from jsonargparse import ArgumentParser, ActionConfigFile, Namespace
 from jsonargparse.typing import Path_dw
 
-from quantum_rotor.autocorr import autocorrelations
-from quantum_rotor.core import PullbackAction
-from quantum_rotor.hmc import hmc
-from quantum_rotor.scripts.io import load_model
-from quantum_rotor.xy import top_charge
+from nflows_xy.autocorr import autocorrelations
+from nflows_xy.core import PullbackAction
+from nflows_xy.hmc import hmc
+from nflows_xy.scripts.io import load_model
+from nflows_xy.xy import top_charge
 
 parser = ArgumentParser(prog="hmc")
 

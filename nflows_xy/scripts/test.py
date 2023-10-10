@@ -1,8 +1,8 @@
 from jsonargparse import ArgumentParser, Namespace
 from jsonargparse.typing import Path_dw
 
-from quantum_rotor.train import test
-from quantum_rotor.scripts.io import load_model
+from nflows_xy.train import test
+from nflows_xy.scripts.io import load_model
 
 parser = ArgumentParser(prog="test")
 

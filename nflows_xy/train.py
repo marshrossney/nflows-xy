@@ -4,7 +4,7 @@ from torch.optim import Adam
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from tqdm import trange
 
-from quantum_rotor.core import FlowBasedSampler
+from nflows_xy.core import FlowBasedSampler
 
 Tensor = torch.Tensor
 

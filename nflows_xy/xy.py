@@ -3,7 +3,7 @@ from math import pi as π
 
 import torch
 
-from quantum_rotor.utils import mod_2pi
+from nflows_xy.utils import mod_2pi
 
 Tensor = torch.Tensor
 
@@ -44,10 +44,14 @@ class Action2d(Action):
         super().__init__(beta, lattice_size, 2)
 
     def __call__(self, φ: Tensor) -> Tensor:
-        return -self.beta * torch.cos(φ - φ.roll(+1, -2)).sum(dim=-2)
+        return -self.beta * (
+                torch.cos(φ - φ.roll(+1, -3)).sum(dim=(-3, -2))
+                + torch.cos(φ - φ.roll(+1, -2)).sum(dim=(-3, -2))
+        )
 
     def grad(self, φ: Tensor) -> Tensor:
         return -self.beta * (
+            -torch.sin(φ - φ.roll(+1, -3)) + torch.sin(φ.roll(-1, -3) - φ)
             -torch.sin(φ - φ.roll(+1, -2)) + torch.sin(φ.roll(-1, -2) - φ)
         )
 

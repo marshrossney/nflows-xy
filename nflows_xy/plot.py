@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import torch
 
-from quantum_rotor.autocorr import ComputedAutocorrelations
+from nflows_xy.autocorr import ComputedAutocorrelations
 
 Tensor = torch.Tensor
 Figure = plt.Figure
