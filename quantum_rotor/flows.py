@@ -30,7 +30,7 @@ class DummyFlow(Flow):
 class AutoregressiveFlow(Flow):
     def __init__(
         self,
-        n_lattice: int,
+        lattice_size: int,
         n_mixture: int,
         net_shape: list[int],
         net_activation: str = "Tanh",
@@ -48,7 +48,7 @@ class AutoregressiveFlow(Flow):
                 min_weight=min_weight,
                 ramp_pow=ramp_pow,
             )
-            for _ in range(n_lattice - 1)
+            for _ in range(lattice_size - 1)
         ]
         self.register_module("transforms", nn.ModuleList(transforms))
 

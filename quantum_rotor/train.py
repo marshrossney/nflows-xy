@@ -4,19 +4,22 @@ from torch.optim import Adam
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from tqdm import trange
 
-from quantum_rotor.model import FlowBasedModel
+from quantum_rotor.core import FlowBasedSampler
 
 Tensor = torch.Tensor
 
 
 @torch.enable_grad()
 def train(
-    model: FlowBasedModel,
+    model: FlowBasedSampler,
     n_steps: int,
     batch_size: int,
     init_lr: float = 1e-3,
     metrics_interval: int = 10,
 ):
+    # Initialise lazy parameters
+    _ = model(1)
+
     optimizer = Adam(model.parameters(), lr=init_lr)
     scheduler = CosineAnnealingLR(optimizer, T_max=n_steps)
 
@@ -60,7 +63,7 @@ def train(
 
 @torch.no_grad()
 def test(
-    model: FlowBasedModel,
+    model: FlowBasedSampler,
     batch_size: int = 1024,
     n_batches: int = 100,
 ):

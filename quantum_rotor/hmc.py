@@ -2,10 +2,9 @@ from math import pi as π, sqrt
 import logging
 
 import torch
-import torch.nn as nn
 from tqdm import trange
 
-from quantum_rotor.action import Action
+from quantum_rotor.xy import Action
 from quantum_rotor.utils import mod_2pi
 
 Tensor = torch.Tensor
@@ -48,20 +47,14 @@ def leapfrog(
 
 def hmc(
     action: Action,
-    n_lattice: int,
     n_replica: int,
     n_traj: int,
-    n_therm: int,
     step_size: float,
+    n_therm: int = 0,
     traj_length: float = 1.0,
 ):
-    if isinstance(action, nn.Module):
-        action = action.to(torch.double)
-
-    φ0 = torch.empty((n_replica, n_lattice, 1), dtype=torch.double).uniform_(
-        0, 2 * π
-    )
-    sample = torch.empty((n_traj, n_replica, n_lattice, 1), dtype=torch.double)
+    sample = torch.empty((n_traj, n_replica, *action.lattice_shape, 1))
+    φ0 = torch.empty((n_replica, *action.lattice_shape, 1)).uniform_(0, 2 * π)
 
     total_accepted = 0
     ΔH_list = []

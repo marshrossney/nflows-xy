@@ -4,13 +4,40 @@ from typing import NamedTuple
 import torch
 import torch.nn as nn
 
+from quantum_rotor.xy import Action
 from quantum_rotor.flows import Flow
-from quantum_rotor.action import ActionPBC
 
 Tensor = torch.Tensor
 
 
-class FlowBasedModel(nn.Module):
+class PullbackAction(Action):
+    def __init__(self, flow: nn.Module, target: Action):
+        super().__init__(target.beta, target.lattice_size, target.lattice_dim)
+        self.flow = flow
+        self.target = target
+
+    @torch.no_grad()
+    def __call__(self, u: Tensor) -> Tensor:
+        φ, ldj = self.flow(u)
+        return self.target(φ) - ldj
+
+    @torch.enable_grad()
+    def grad(self, u: Tensor) -> Tensor:
+        u.requires_grad_(True)
+        φ, ldj = self.flow(u)
+
+        pullback = self.target(φ) - ldj
+
+        (gradient,) = torch.autograd.grad(
+            outputs=pullback,
+            inputs=u,
+            grad_outputs=torch.ones_like(pullback),
+        )
+
+        return gradient
+
+
+class FlowBasedSampler(nn.Module):
     class Fields(NamedTuple):
         inputs: Tensor
         outputs: Tensor
@@ -21,11 +48,9 @@ class FlowBasedModel(nn.Module):
         pushforward: Tensor
         pullback: Tensor
 
-    def __init__(self, flow: Flow, n_lattice: int, beta: float):
+    def __init__(self, flow: Flow, target: Action):
         super().__init__()
-        self.n_lattice = n_lattice
-        self.beta = beta
-        self.target = ActionPBC(beta)
+        self.target = target
         self.register_module("flow", flow)
         self.register_buffer(
             "_dummy_buffer", torch.tensor(0.0), persistent=False
@@ -33,7 +58,7 @@ class FlowBasedModel(nn.Module):
 
     def base_sample(self, batch_size: int) -> tuple[Tensor, Tensor]:
         u = self._dummy_buffer.new_empty(
-            (batch_size, self.n_lattice, 1)
+            (batch_size, *self.target.lattice_shape, 1)
         ).uniform_(0, 2 * π)
         return u, u.new_zeros(batch_size, 1)
 

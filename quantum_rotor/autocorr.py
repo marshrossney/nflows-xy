@@ -1,36 +1,28 @@
 from dataclasses import dataclass
-from math import pi as π
 from typing import NamedTuple
 
 import torch
 import torch.nn.functional as F
 
-from quantum_rotor.utils import mod_2pi
-
 Tensor = torch.Tensor
-
-
-def top_charge(φ: Tensor) -> Tensor:
-    assert φ.shape[-1] == 1
-    U = φ - φ.roll(+1, -2)
-    q = (mod_2pi(U + π) - π) / (2 * π)
-    return q.sum(dim=-2)
 
 
 def _compute_autocorrelation(X: Tensor) -> Tensor:
     X = X.squeeze(-1)
     assert X.dim() == 1
 
+    X = X - X.mean()
+
     if len(X) % 2 == 0:
         mid = len(X) // 2
+        pad = lambda X: F.pad(X, (0, 1), "constant", 0)  # noqa: E731
     else:
         mid = (len(X) + 1) // 2 - 1
-
-    X = X - X.mean()
+        pad = lambda X: X  # noqa: E731
 
     Γ = F.conv1d(
         X.view(1, 1, -1),
-        F.pad(X.view(1, 1, -1), (0, 1), "constant", 0),
+        pad(X.view(1, 1, -1)),
         padding="same",
     ).squeeze()
 

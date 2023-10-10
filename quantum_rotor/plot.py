@@ -1,8 +1,7 @@
 import matplotlib.pyplot as plt
-from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import torch
 
-from quantum_rotor.topology import ComputedAutocorrelations
+from quantum_rotor.autocorr import ComputedAutocorrelations
 
 Tensor = torch.Tensor
 Figure = plt.Figure

@@ -1,10 +1,11 @@
 from jsonargparse import ArgumentParser, ActionConfigFile, Namespace
 from jsonargparse.typing import Path_dw
 
-from quantum_rotor.action import PullbackAction
+from quantum_rotor.autocorr import autocorrelations
+from quantum_rotor.core import PullbackAction
 from quantum_rotor.hmc import hmc
 from quantum_rotor.scripts.io import load_model
-from quantum_rotor.topology import top_charge, autocorrelations
+from quantum_rotor.xy import top_charge
 
 parser = ArgumentParser(prog="hmc")
 
@@ -15,9 +16,10 @@ parser.add_argument("-c", "--config", action=ActionConfigFile)
 
 def main(config: Namespace) -> None:
     model = load_model(config.model)
+    # _ = model(1)
     print(model)
 
-    action = PullbackAction(model.target, model.flow)
+    action = PullbackAction(model.flow, model.target)
 
     sample = hmc(action, **config.hmc)
 
