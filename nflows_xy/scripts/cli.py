@@ -5,7 +5,7 @@ import nflows_xy.scripts.test as test
 import nflows_xy.scripts.hmc as hmc
 import nflows_xy.scripts.benchmark as benchmark
 
-parser = ArgumentParser(prog="cli")
+parser = ArgumentParser(prog="nflows-xy")
 
 subcommands = parser.add_subcommands()
 subcommands.add_subcommand("train", train.parser)

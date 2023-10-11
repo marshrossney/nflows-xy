@@ -1,6 +1,7 @@
 from math import pi as π
 
 import matplotlib.pyplot as plt
+import plotille
 import torch
 
 from nflows_xy.autocorr import ComputedAutocorrelations
@@ -10,6 +11,36 @@ Tensor = torch.Tensor
 Figure = plt.Figure
 
 plt.style.use("seaborn-v0_8-darkgrid")
+
+
+def plot_training_metrics_txt(metrics):
+    output = {}
+    t_max = int(metrics.step.max())
+    for metric in metrics.drop(columns="step"):
+        fig = plotille.Figure()
+        fig.x_label = "step"
+        fig.y_label = metric
+        fig.set_x_limits(min_=0, max_=t_max)
+        fig.scatter(
+            metrics["step"],
+            metrics[metric],
+            )
+        output[metric] = fig.show()
+    return output
+
+def plot_test_metrics_txt(metrics):
+    output = {}
+    for metric in metrics:
+        fig = plotille.Figure()
+        fig.x_label = metric
+        fig.y_label = "count"
+        fig.histogram(
+            metrics[metric],
+            bins=15,
+            )
+        output[metric] = fig.show()
+    return output
+
 
 
 def plot_spins_1d(φ: Tensor, bins: int = 35) -> Figure:
@@ -102,3 +133,4 @@ def plot_topological_charge(
     dict_of_figs |= {"errors": fig}
 
     return dict_of_figs
+

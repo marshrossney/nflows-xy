@@ -4,6 +4,7 @@ from pathlib import Path
 import logging
 import subprocess
 
+import pandas as pd
 import torch
 import yaml
 
@@ -15,6 +16,7 @@ logger = logging.getLogger(__name__)
 CHECKPOINT_FILE = "checkpoint.pt"
 CONFIG_FILE = "config.yaml"
 META_FILE = "metadata.yaml"
+TRAINING_METRICS_FILE = "training_metrics.csv"
 
 
 def get_version():
@@ -55,6 +57,7 @@ def save_model(
     path: str | Path,
     model: FlowBasedSampler,
     config: str | dict,
+    training_metrics: pd.DataFrame | None = None,
 ) -> None:
     path.mkdir(parents=True, exist_ok=False)
 
@@ -71,6 +74,12 @@ def save_model(
     checkpoint_file = path / CHECKPOINT_FILE
     logger.info(f"Saving model to {checkpoint_file}")
     torch.save(model.state_dict(), checkpoint_file)
+
+    if training_metrics is not None:
+        metrics_file = path / TRAINING_METRICS_FILE
+        logger.info(f"Saving training metrics to {metrics_file}")
+        training_metrics.to_csv(metrics_file, index=False)
+
 
 
 def load_model(path: str | Path) -> FlowBasedSampler:

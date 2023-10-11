@@ -1230,6 +1230,16 @@ docs = ["furo (>=2023.7.26)", "proselint (>=0.13)", "sphinx (>=7.1.1)", "sphinx-
 test = ["appdirs (==1.4.4)", "covdefaults (>=2.3)", "pytest (>=7.4)", "pytest-cov (>=4.1)", "pytest-mock (>=3.11.1)"]
 
 [[package]]
+name = "plotille"
+version = "5.0.0"
+description = "Plot in the terminal using braille dots."
+optional = false
+python-versions = ">=3.7,<4.0"
+files = [
+    {file = "plotille-5.0.0.tar.gz", hash = "sha256:99e5ca51a2e4c922ead3a3b0863cc2c6a9a4b3f701944589df10f42ce02ab3dc"},
+]
+
+[[package]]
 name = "pluggy"
 version = "1.3.0"
 description = "plugin and hook calling mechanisms for python"
@@ -1723,4 +1733,4 @@ test = ["pytest (>=6.0.0)", "setuptools (>=65)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "3.10.7"
-content-hash = "8c536ed47d4a82ff81d5c7dcd9625c7a3022d7a395f934c105dd3e0b47983701"
+content-hash = "b99ebdab80543ba9f8f0fd207b2cb43fd4c529a942018928adf0f3d19f3561af"

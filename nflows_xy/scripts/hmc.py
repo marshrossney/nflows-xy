@@ -13,7 +13,6 @@ from nflows_xy.transforms.module import (
 )
 
 parser = ArgumentParser(prog="hmc")
-
 parser.add_argument("model", type=Path_dw, help="path to a trained model")
 parser.add_function_arguments(hmc, "hmc", skip=["action"])
 parser.add_argument(

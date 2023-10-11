@@ -13,8 +13,9 @@ import torch
 
 from nflows_xy.core import Flow, FlowBasedSampler
 from nflows_xy.xy import action
-from nflows_xy.train import train
+from nflows_xy.train import train, test
 from nflows_xy.scripts.io import save_model
+from nflows_xy.plot import plot_training_metrics_txt, plot_test_metrics_txt
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -23,6 +24,7 @@ parser = ArgumentParser(prog="train")
 parser.add_argument("--flow", type=Flow)
 parser.add_class_arguments(class_from_function(action), "target")
 parser.add_function_arguments(train, "train", skip=["model"])
+parser.add_function_arguments(test, "test", skip=["model"])
 parser.add_argument("--cuda", action=ActionYesNo, help="train using CUDA")
 parser.add_argument(
     "--double", action=ActionYesNo, help="use double precision"
@@ -55,9 +57,19 @@ def main(config: Namespace) -> None:
     dtype = torch.float64 if config.double else torch.float32
     model = model.to(device=device, dtype=dtype)
 
-    _ = train(model, **config.train)
+    training_metrics = train(model, **config.train)
 
-    if output_path is None:
-        return
+    logger.info("Plotting training metrics...")
+    figs = plot_training_metrics_txt(training_metrics)
+    print("\n\n".join(list(figs.values())))
+    
+    test_metrics = test(model, **config.test)
 
-    save_model(output_path, model, config_yaml)
+    logger.info("Plotting test metrics...")
+    figs = plot_test_metrics_txt(test_metrics)
+    print("\n\n".join(list(figs.values())))
+
+    print(test_metrics.describe())
+
+    if output_path is not None:
+        save_model(output_path, model, config_yaml)

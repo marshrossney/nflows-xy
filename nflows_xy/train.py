@@ -25,7 +25,7 @@ def train(
 
     metrics = []
 
-    with trange(n_steps + 1, desc="Training") as pbar:
+    with trange(1, n_steps + 1, desc="Training") as pbar:
         for step in pbar:
             fields, actions = model(batch_size)
 
@@ -57,6 +57,7 @@ def train(
                 pbar.set_postfix(met)
 
     metrics = pd.DataFrame(metrics)
+    metrics = metrics.apply(pd.to_numeric)
 
     return metrics
 

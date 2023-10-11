@@ -1,19 +1,24 @@
+import logging
+
 from jsonargparse import ArgumentParser, Namespace
 from jsonargparse.typing import Path_dw
 
 from nflows_xy.train import test
 from nflows_xy.scripts.io import load_model
+from nflows_xy.plot import plot_test_metrics_txt
 
 from nflows_xy.transforms.module import (
     UnivariateTransformModule,
     dilute_module,
 )
 
-parser = ArgumentParser(prog="test")
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
+parser = ArgumentParser(prog="test")
 parser.add_argument("model", type=Path_dw, help="path to a trained model")
 parser.add_function_arguments(test, "test", skip=["model"])
-parser.add_argument("--dilution", type=float, default=0.0)
+parser.add_argument("--dilution", type=float)
 
 
 def main(config: Namespace) -> None:
@@ -25,12 +30,8 @@ def main(config: Namespace) -> None:
                 dilute_module(module, config.dilution)
 
     metrics = test(model, **config.test)
-    print(metrics.describe(include="all"))
+    logger.info("Plotting test metrics")
+    figs = plot_test_metrics_txt(metrics)
+    print("\n\n".join(list(figs.values())))
 
-    from nflows_xy.plot import plot_spins_1d
-
-    fields, actions = model(100000)
-    φ = fields.outputs
-
-    fig = plot_spins_1d(φ)
-    fig.savefig("spins.png")
+    print(metrics.describe())
