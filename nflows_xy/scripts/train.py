@@ -22,17 +22,24 @@ from nflows_xy.xy import action
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-parser = ArgumentParser(prog="train")
-parser.add_argument("--model", type=Flow)
+parser = ArgumentParser(
+    prog="train", description="Train a Normalising Flow model from scratch."
+)
+parser.add_argument(
+    "--model",
+    type=Flow,
+    required=True,
+    help="Specifies the Normalising Flow model.",
+)
 parser.add_class_arguments(class_from_function(action), "target")
 parser.add_function_arguments(train, "train", skip=["model"])
 parser.add_function_arguments(test, "test", skip=["model"])
-parser.add_argument("--cuda", action=ActionYesNo, help="train using CUDA")
+parser.add_argument("--cuda", action=ActionYesNo, help="Train using CUDA.")
 parser.add_argument(
-    "--double", action=ActionYesNo, help="use double precision"
+    "--double", action=ActionYesNo, help="Use double precision."
 )
 parser.add_argument(
-    "-o", "--output", type=Path_dc, help="location to save trained model"
+    "-o", "--output", type=Path_dc, help="Location to save trained model."
 )
 parser.add_argument("-c", "--config", action=ActionConfigFile)
 

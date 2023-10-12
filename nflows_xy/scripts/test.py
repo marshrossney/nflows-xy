@@ -16,10 +16,16 @@ from nflows_xy.transforms.module import (
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-parser = ArgumentParser(prog="test")
-parser.add_argument("model", type=Path_dw, help="path to a trained model")
+parser = ArgumentParser(
+    prog="test", description="Test a trained Normalising Flow model."
+)
+parser.add_argument("model", type=Path_dw, help="Path to a trained model.")
 parser.add_function_arguments(test, "test", skip=["model"])
-parser.add_argument("--dilution", type=float)
+parser.add_argument(
+    "--dilution",
+    type=float,
+    help="Dilutes the model by mixing with the identity transformation.",
+)
 
 
 def main(config: Namespace) -> None:

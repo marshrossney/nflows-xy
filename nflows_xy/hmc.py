@@ -29,7 +29,7 @@ def leapfrog(
     p0: Tensor,
     action: Action,
     step_size: float,
-    traj_length: float = 1.0,
+    traj_length: float,
 ):
     assert p0.dtype == φ0.dtype
 
@@ -65,6 +65,21 @@ def hmc(
     n_therm: int = 0,
     traj_length: float = 1.0,
 ) -> tuple[Tensor, HmcMetrics]:
+    """Run the Hybrid Monte Carlo algorithm.
+
+    Args:
+        action: Target action to be sampled from.
+        n_replica: Number of replica simulations running in parallel.
+        n_traj: Number of molecular dynamics trajectories.
+        step_size: Molecular dynamics timestep.
+        n_therm: Number of trajectories to discard as 'thermalisation'.
+        traj_length: Total time for each molecular dynamics trajectory.
+
+    Returns:
+        tuple[Tensor, HmcMetrics]:
+            A tuple containing the sample of field configurations and the
+            HMC metrics.
+    """
     sample = torch.empty((n_traj, n_replica, *action.lattice_shape, 1))
     φ0 = torch.empty((n_replica, *action.lattice_shape, 1)).uniform_(0, 2 * π)
 
@@ -129,6 +144,9 @@ def fhmc(
     n_therm: int = 0,
     traj_length: float = 1.0,
 ) -> tuple[Tensor, HmcMetrics]:
+    """
+    Alias for hmc(PullbackAction(flow, target), **kwargs).
+    """
     return hmc(
         PullbackAction(flow, target),
         n_replica=n_replica,

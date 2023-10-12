@@ -71,6 +71,13 @@ def action(
     lattice_size: int,
     lattice_dim: int,
 ) -> Action:
+    """Specify an XY action that can be used as a training or HMC target.
+
+    Args:
+        beta: Inverse temperature parameter, (β)
+        lattice_size: Number of lattice sites in each dimension
+        lattice_dim: Number of lattice dimensions (1 or 2)
+    """
     if lattice_dim == 1:
         return Action1d(beta, lattice_size)
     elif lattice_dim == 2:
