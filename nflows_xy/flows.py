@@ -28,6 +28,17 @@ class DummyFlow(Flow):
 
 
 class AutoregressiveFlow(Flow):
+    """One-dimensional autoregressive flow model.
+
+    Args:
+        lattice_size: Number of lattice sites.
+        n_mixture: Each layer is a convex combination of `n_mixture` transformations.
+        net_shape: Hidden layer widths for the fully-connected neural networks.
+        net_activation: Activation function to apply after each linear transformation.
+        weighted: Whether or not the convex combinations are weighted mixtures.
+        min_weight: Minimum weight for weighted mixtures.
+        ramp_pow: Integer power in the ramp function used to construct sigmoid transformations.
+    """
     def __init__(
         self,
         lattice_size: int,
