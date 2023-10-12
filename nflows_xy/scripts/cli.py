@@ -3,6 +3,7 @@ from jsonargparse import ArgumentParser
 import nflows_xy.scripts.train as train
 import nflows_xy.scripts.test as test
 import nflows_xy.scripts.hmc as hmc
+import nflows_xy.scripts.fhmc as fhmc
 import nflows_xy.scripts.benchmark as benchmark
 
 parser = ArgumentParser(prog="nflows-xy")
@@ -11,6 +12,7 @@ subcommands = parser.add_subcommands()
 subcommands.add_subcommand("train", train.parser)
 subcommands.add_subcommand("test", test.parser)
 subcommands.add_subcommand("hmc", hmc.parser)
+subcommands.add_subcommand("fhmc", fhmc.parser)
 subcommands.add_subcommand("benchmark", benchmark.parser)
 
 
@@ -23,6 +25,8 @@ def cli():
         test.main(config.test)
     elif config.subcommand == "hmc":
         hmc.main(config.hmc)
+    elif config.subcommand == "fhmc":
+        fhmc.main(config.fhmc)
     elif config.subcommand == "benchmark":
         benchmark.main(config.benchmark)
 

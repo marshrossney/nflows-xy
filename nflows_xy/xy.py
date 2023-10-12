@@ -8,14 +8,22 @@ from nflows_xy.utils import mod_2pi
 Tensor = torch.Tensor
 
 
+def top_charge(φ: Tensor) -> Tensor:
+    assert φ.shape[-1] == 1
+    U = φ - φ.roll(+1, -2)
+    q = (mod_2pi(U + π) - π) / (2 * π)
+    return q.sum(dim=-2)
+
+
 class Action(ABC):
     def __init__(self, beta: float, lattice_size: int, lattice_dim: int):
         self.beta = beta
         self.lattice_size = lattice_size
         self.lattice_dim = lattice_dim
-        self.lattice_shape = tuple(
-            self.lattice_size for _ in range(self.lattice_dim)
-        )
+
+    @property
+    def lattice_shape(self) -> tuple[int]:
+        return tuple(self.lattice_size for _ in range(self.lattice_dim))
 
     @abstractmethod
     def __call__(self, φ: Tensor) -> Tensor:
@@ -69,10 +77,3 @@ def action(
         return Action2d(beta, lattice_size)
     else:
         raise ValueError("Only one or two dimensions supported")
-
-
-def top_charge(φ: Tensor) -> Tensor:
-    assert φ.shape[-1] == 1
-    U = φ - φ.roll(+1, -2)
-    q = (mod_2pi(U + π) - π) / (2 * π)
-    return q.sum(dim=-2)

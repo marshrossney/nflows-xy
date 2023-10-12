@@ -1,42 +1,85 @@
-from jsonargparse import ArgumentParser, ActionConfigFile, Namespace
-from jsonargparse.typing import Path_dw
+from copy import deepcopy
+from dataclasses import asdict
+from pathlib import Path
+import logging
+
+from jsonargparse import (
+    ArgumentParser,
+    ActionConfigFile,
+    class_from_function,
+    Namespace,
+)
+from jsonargparse.typing import Path_dc
+import pandas as pd
 
 from nflows_xy.autocorr import autocorrelations
-from nflows_xy.core import PullbackAction
 from nflows_xy.hmc import hmc
-from nflows_xy.scripts.io import load_model
-from nflows_xy.xy import top_charge
+from nflows_xy.plot import plot_observable
+from nflows_xy.xy import action, top_charge
+from nflows_xy.scripts.io import SamplingDirectory
+from nflows_xy.utils import make_banner
 
-from nflows_xy.transforms.module import (
-    UnivariateTransformModule,
-    dilute_module,
-)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-parser = ArgumentParser(prog="hmc")
-parser.add_argument("model", type=Path_dw, help="path to a trained model")
+parser = ArgumentParser(prog="hmc-benchmark")
+
+parser.add_class_arguments(class_from_function(action), "target")
 parser.add_function_arguments(hmc, "hmc", skip=["action"])
-parser.add_argument(
-    "--dilution",
-    type=float,
-    help="How much to dilute the flow by mixing with identity",
-)
 parser.add_argument("-c", "--config", action=ActionConfigFile)
+parser.add_argument(
+    "-o", "--output", type=Path_dc, help="location to save outputs"
+)
 
 
 def main(config: Namespace) -> None:
-    model = load_model(config.model)
-    print(model)
+    config_copy = deepcopy(config)
 
-    if config.dilution is not None:
-        for module in model.flow.modules():
-            if isinstance(module, UnivariateTransformModule):
-                dilute_module(module, config.dilution)
+    if config.output is None:
+        logger.warning(
+            "No output directory specified: Sample outputs will not be saved!"
+        )
+        output_path = None
 
-    action = PullbackAction(model.flow, model.target)
+    else:
+        output_path = Path(config.output)
+        if output_path.exists():
+            raise FileExistsError(f"{output_path} already exists!")
 
-    sample = hmc(action, **config.hmc)
+    config = parser.instantiate_classes(config)
 
-    Q = top_charge(sample)
-    Γ = autocorrelations(Q)
+    φ, metrics = hmc(config.target, **config.hmc)
 
-    print(Γ.integrated)
+    S = config.target(φ)
+    Γ_S = autocorrelations(S)
+    logger.info("Plotting the action...")
+    figs = plot_observable(S, Γ_S, "S")
+    
+    print(make_banner("Action plots"))
+    print("\n".join(list(figs.values())))
+
+    Q = top_charge(φ)
+    Γ_Q = autocorrelations(Q)
+    logger.info("Plotting the topological charge...")
+    figs = plot_observable(Q, Γ_Q, "Q")
+
+    print(make_banner("Topological Charge plots"))
+    print("\n".join(list(figs.values())))
+
+    metrics = pd.Series(
+        asdict(metrics)
+        | {
+            "tau_int_S": Γ_S.integrated,
+            "tau_int_Q": Γ_Q.integrated,
+        }
+    )
+    print(make_banner("Metrics"))
+    print(metrics)
+
+    if output_path is not None:
+        _ = SamplingDirectory.new(
+            output_path,
+            sample=φ,
+            config=config_copy,
+            metrics=metrics,
+        )

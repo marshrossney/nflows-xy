@@ -3,9 +3,10 @@ import logging
 from jsonargparse import ArgumentParser, Namespace
 from jsonargparse.typing import Path_dw
 
+from nflows_xy.core import FlowBasedSampler
 from nflows_xy.train import test
-from nflows_xy.scripts.io import load_model
-from nflows_xy.plot import plot_test_metrics_txt
+from nflows_xy.scripts.io import TrainingDirectory
+from nflows_xy.plot import plot_test_metrics
 
 from nflows_xy.transforms.module import (
     UnivariateTransformModule,
@@ -22,16 +23,20 @@ parser.add_argument("--dilution", type=float)
 
 
 def main(config: Namespace) -> None:
-    model = load_model(config.model)
+    train_config = TrainingDirectory(config.model).load_config()
+
+    model = train_config.model
 
     if config.dilution is not None:
-        for module in model.flow.modules():
+        for module in model.modules():
             if isinstance(module, UnivariateTransformModule):
                 dilute_module(module, config.dilution)
 
+    model = FlowBasedSampler(flow=model, target=train_config.target)
+
     metrics = test(model, **config.test)
     logger.info("Plotting test metrics")
-    figs = plot_test_metrics_txt(metrics)
-    print("\n\n".join(list(figs.values())))
+    figs = plot_test_metrics(metrics)
+    print("\n".join(list(figs.values())))
 
     print(metrics.describe())

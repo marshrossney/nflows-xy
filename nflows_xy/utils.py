@@ -24,3 +24,10 @@ def dot(u: Tensor, v: Tensor) -> Tensor:
 
 def dot_keepdim(u: Tensor, v: Tensor) -> Tensor:
     return dot(u, v).unsqueeze(-1)
+
+
+def make_banner(txt: str, size: int = 79) -> str:
+    assert len(txt) < size
+    rule = "=" * size
+    pad = (size - len(txt)) // 2
+    return rule + "\n" + txt.rjust(pad) + "\n" + rule

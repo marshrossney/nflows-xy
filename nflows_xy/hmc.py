@@ -1,16 +1,27 @@
+from dataclasses import dataclass
 from math import pi as π, sqrt
 import logging
 
 import torch
+import torch.nn as nn
 from tqdm import trange
 
+from nflows_xy.flows import Flow
 from nflows_xy.xy import Action
+from nflows_xy.core import PullbackAction
 from nflows_xy.utils import mod_2pi
 
 Tensor = torch.Tensor
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class HmcMetrics:
+    acceptance: float
+    zero_stat: float
+    err_zero_stat: float
 
 
 def leapfrog(
@@ -45,6 +56,7 @@ def leapfrog(
     return φ, p, t
 
 
+@torch.no_grad()
 def hmc(
     action: Action,
     n_replica: int,
@@ -52,7 +64,7 @@ def hmc(
     step_size: float,
     n_therm: int = 0,
     traj_length: float = 1.0,
-):
+) -> tuple[Tensor, HmcMetrics]:
     sample = torch.empty((n_traj, n_replica, *action.lattice_shape, 1))
     φ0 = torch.empty((n_replica, *action.lattice_shape, 1)).uniform_(0, 2 * π)
 
@@ -90,7 +102,7 @@ def hmc(
 
             if SAMPLING:
                 sample[step - n_therm] = φ0
-                total_accepted += accepted.sum()
+                total_accepted += sum(accepted).item()
                 ΔH_list.append(ΔH)
 
     r_accept = total_accepted / (n_traj * n_replica)
@@ -103,4 +115,24 @@ def hmc(
     logger.info(f"Acceptance rate: {r_accept:.5f}")
     logger.info(f"exp(-ΔH) - 1 = {(mean - 1):e} ± {stderr:e}")
 
-    return sample.transpose(0, 1)
+    metrics = HmcMetrics(r_accept, mean - 1, stderr)
+
+    return sample.transpose(0, 1), metrics
+
+
+def fhmc(
+    flow: Flow,
+    target: Action,
+    n_replica: int,
+    n_traj: int,
+    step_size: float,
+    n_therm: int = 0,
+    traj_length: float = 1.0,
+) -> tuple[Tensor, HmcMetrics]:
+    return hmc(
+        PullbackAction(flow, target),
+        n_replica=n_replica,
+        n_traj=n_traj,
+        step_size=step_size,
+        traj_length=traj_length,
+    )
