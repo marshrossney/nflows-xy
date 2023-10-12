@@ -1,0 +1,7 @@
+hmc:
+  n_replica: 24
+  n_traj: 50
+  n_therm: 5
+  step_size: 0.01
+  traj_length: 1.0
+

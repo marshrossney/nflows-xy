@@ -2,34 +2,32 @@
 
 ## Installation on Linux
 
-### Prerequisites
+1. Install the prerequisites
+    - [pyenv](https://github.com/pyenv/pyenv) (e.g. using [this installer](https://github.com/pyenv/pyenv-installer))
+    - [poetry](https://python-poetry.org/docs/#installing-with-the-official-installer)
 
-1. [pyenv](https://github.com/pyenv/pyenv) (e.g. using [this installer](https://github.com/pyenv/pyenv-installer))
-2. [poetry](https://python-poetry.org/docs/#installing-with-the-official-installer)
 
-### Installation
-
-1. Clone the repository
+2. Clone the repository
 
 ```sh
 $ git clone https://github.com/marshrossney/nflows-xy
 $ cd nflows-xy
 ```
 
-2. Make sure pyenv knows to use Python 3.10.7 within this directory
+3. Make sure pyenv knows to use Python 3.10.7 within this directory
 
 ```sh
 $ pyenv install 3.10.7
 $ pyenv local 3.10.7  # or pyenv global 3.10.7
 ```
 
-3. Install the package and its dependencies
+4. Install the package and its dependencies
 
 ```sh
 $ poetry install
 ```
 
-## Command-line interface
+## Usage
 
 There is a CLI which is accessed via the command `nfxy`.
 Generally speaking, commands are run in the following way:
@@ -38,9 +36,23 @@ Generally speaking, commands are run in the following way:
 $ poetry run nfxy SUBCOMMAND -c CONFIG_FILE_PATH --ADDITIONAL_ARGS
 ```
 
+The important subcommands are
+- `train`: Trains a new model from scratch
+- `hmc`: Use the trained model in the [flow-HMC algorithm](https://arxiv.org/abs/2302.08408) (often called 'field transformation' HMC).
+
+Other subcommands are
+- `test`: Computes some test metrics on a trained model. These metrics are computed whenever `train` or `hmc` are run, but it can be useful to run them separately
+- `hmc-benchmark`: This just runs HMC without any flow/field transformation.
+
 Example `.yaml` configuration files can be found in the `examples` folder.
 
-### Help pages
+To avoid cluttering up the terminal with tables and plots, you may want to redirect `stdout` to a file, e.g.
+
+```sh
+$ poetry run nfxy train -c /path/to/config.yaml > training.log
+```
+
+## Getting help
 
 There are multiple ways to bring up help pages:
 

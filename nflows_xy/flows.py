@@ -39,6 +39,7 @@ class AutoregressiveFlow(Flow):
         min_weight: Minimum weight for weighted mixtures.
         ramp_pow: Integer power in the ramp function used to construct sigmoid transformations.
     """
+
     def __init__(
         self,
         lattice_size: int,

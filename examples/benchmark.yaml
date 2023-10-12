@@ -1,0 +1,12 @@
+target:
+  beta: 2.
+  lattice_size: 12
+  lattice_dim: 1
+
+hmc:
+  n_replica: 24
+  n_traj: 1000
+  n_therm: 100
+  step_size: 0.1
+  traj_length: 1.0
+

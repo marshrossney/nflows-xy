@@ -3,7 +3,6 @@ from math import pi as π, sqrt
 import logging
 
 import torch
-import torch.nn as nn
 from tqdm import trange
 
 from nflows_xy.flows import Flow

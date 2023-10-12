@@ -21,10 +21,24 @@ parser = ArgumentParser(
 )
 parser.add_argument("model", type=Path_dw, help="Path to a trained model.")
 parser.add_function_arguments(test, "test", skip=["model"])
-parser.add_argument(
-    "--dilution",
+modifications = parser.add_argument_group(
+    "modify",
+    "Modifications to be applied to the existing flow model or target action.",
+)
+modifications.add_argument(
+    "--modify.beta",
     type=float,
-    help="Dilutes the model by mixing with the identity transformation.",
+    help="Modify the target beta.",
+)
+modifications.add_argument(
+    "--modify.lattice_size",
+    type=int,
+    help="Modify the target lattice size.",
+)
+modifications.add_argument(
+    "--modify.dilution",
+    type=float,
+    help="Dilute the flow by mixing with identity.",
 )
 
 
@@ -32,13 +46,18 @@ def main(config: Namespace) -> None:
     train_config = TrainingDirectory(config.model).load_config()
 
     model = train_config.model
+    target = train_config.target
 
-    if config.dilution is not None:
+    if config.modify.beta is not None:
+        target.beta = config.modify.beta
+    if config.modify.lattice_size is not None:
+        target.lattice_size = config.modify.lattice_size
+    if config.modify.dilution is not None:
         for module in model.modules():
             if isinstance(module, UnivariateTransformModule):
-                dilute_module(module, config.dilution)
+                dilute_module(module, config.modify.dilution)
 
-    model = FlowBasedSampler(flow=model, target=train_config.target)
+    model = FlowBasedSampler(model, target)
 
     metrics = test(model, **config.test)
     logger.info("Plotting test metrics")

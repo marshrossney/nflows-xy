@@ -1,10 +1,7 @@
-from math import pi as π
-
 import plotille
 import torch
 
 from nflows_xy.autocorr import ComputedAutocorrelations
-from nflows_xy.utils import mod_2pi
 
 Tensor = torch.Tensor
 
@@ -17,7 +14,6 @@ _plotille_colours = [
     "magenta",
     "cyan",
 ]
-
 
 
 def plot_training_metrics(metrics):
@@ -49,6 +45,7 @@ def plot_test_metrics(metrics):
         output[metric] = fig.show()
     return output
 
+
 def plot_observable(
     observable: Tensor,
     autocorrelations: ComputedAutocorrelations,
@@ -60,7 +57,7 @@ def plot_observable(
     stat = autocorrelations.errors.stat.abs()
     bias = autocorrelations.errors.bias.abs()
     W_opt = autocorrelations.truncation_window
-    i_cut=2 * torch.argmax((Γ < 0).int())
+    i_cut = 2 * torch.argmax((Γ < 0).int())
     log_Γ = torch.tensor(Γ[:i_cut]).log()
     mask = log_Γ.isfinite()
     log_Γ = log_Γ[mask].tolist()
@@ -116,4 +113,3 @@ def plot_observable(
     dict_of_figs["errors"] = fig.show(legend=True)
 
     return dict_of_figs
-
