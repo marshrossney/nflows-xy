@@ -60,7 +60,13 @@ class FlowBasedSampler(nn.Module):
         u = self._dummy_buffer.new_empty(
             (batch_size, *self.target.lattice_shape, 1)
         ).uniform_(0, 2 * π)
-        return u, u.new_zeros(batch_size, 1)
+        S = u.new_zeros(batch_size, 1)
+
+        # u needs to be a leaf variable for more complicated loss functions
+        if self.training:
+            u.requires_grad_(True)
+
+        return u, S
 
     def forward(self, batch_size: int) -> tuple[Tensor, Tensor]:
         u, S_base = self.base_sample(batch_size)

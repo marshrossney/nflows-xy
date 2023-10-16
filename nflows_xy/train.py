@@ -32,12 +32,14 @@ def train(
     """
 
     # Initialise lazy parameters
-    _ = model(1)
+    #_ = model(1)
 
     optimizer = Adam(model.parameters(), lr=init_lr)
     scheduler = CosineAnnealingLR(optimizer, T_max=n_steps)
 
     metrics = []
+
+    curr_max_force = 0
 
     with trange(1, n_steps + 1, desc="Training") as pbar:
         for step in pbar:
@@ -45,7 +47,22 @@ def train(
 
             log_weights = actions.pushforward - actions.target
             rev_kl = log_weights.mean().negative()
-            loss = rev_kl  # TODO: include force minimisation in loss
+
+            grad_pullback, = torch.autograd.grad(
+                outputs=actions.pullback,
+                inputs=fields.inputs,
+                grad_outputs=torch.ones_like(actions.pullback),
+                create_graph=True,
+                #is_grads_batched=True,
+            )
+            var_force = grad_pullback.var()
+
+            max_force = grad_pullback.abs().max()
+            if max_force > curr_max_force:
+                curr_max_force = max_force
+
+            #loss = rev_kl
+            loss = .75 * rev_kl + .25 * var_force
 
             optimizer.zero_grad()
             loss.backward()
@@ -66,6 +83,8 @@ def train(
                     "loss": f"{loss.item():.5f}",
                     "ess": f"{ess.item():.3f}",
                     "vlw": f"{vlw.item():.3f}",
+                    "varF": f"{var_force.item():.3f}",
+                    "maxF": f"{curr_max_force.item():.3f}",
                 }
                 metrics.append(met)
                 pbar.set_postfix(met)

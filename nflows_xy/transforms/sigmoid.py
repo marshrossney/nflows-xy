@@ -1,6 +1,7 @@
 """
-Credit to https://arxiv.org/pdf/2110.00351.pdf
-and https://github.com/noegroup/bgflow for this transformation
+Credit to https://arxiv.org/pdf/2110.00351.pdf for this transformation
+Also see
+https://github.com/noegroup/bgflow/blob/main/bgflow/nn/flow/transformer/jax.py
 """
 from functools import partial
 from math import pi as π
@@ -13,6 +14,7 @@ from .wrappers import (
     rescale_to_interval_,
     mixture_,
     mix_with_identity_,
+    mask_outside_interval_,
 )
 from .utils import normalise_weights
 
@@ -24,7 +26,7 @@ Transform: TypeAlias = Callable[Tensor, tuple[Tensor, Tensor]]
 
 
 def exponential_ramp(
-    x: Tensor, params: Tensor, *, power: int = 2, eps: float = 1e-9
+    x: Tensor, params: Tensor, *, power: int, eps: float = 1e-6
 ) -> tuple[Tensor, Tensor]:
     assert isinstance(power, int) and power > 0
     a, b, ε = params, power, eps
@@ -35,7 +37,8 @@ def exponential_ramp(
         torch.exp(exp_factor) / torch.exp(-a),
         torch.zeros_like(x),
     )
-    dρdx = (-b / x_masked) * exp_factor * ρ
+    # NOTE: don't need a `where` since dρdx=0 where x<ε already
+    dρdx = a * b * x_masked.pow(-(b + 1)) * ρ
     return ρ, dρdx
 
 
@@ -75,18 +78,21 @@ def build_sigmoid_transform(
     ramp = partial(exponential_ramp, power=ramp_pow)
 
     transform = mixture_(
-        rescale_to_interval_(
-            mix_with_identity_(affine_(sigmoid_(ramp))),
-            lower_bound=0.0,
-            upper_bound=2 * π,
-        ),
-        weighted=weighted,
-        mixture_dim=-2,
-    )
+            rescale_to_interval_(
+                mix_with_identity_(affine_(sigmoid_(ramp))),
+                lower_bound=0.0,
+                upper_bound=2 * π,
+            ),
+            weighted=weighted,
+            mixture_dim=-2,
+        )
 
     funcs = [
-        lambda x: F.softplus(x) + 1e-3,  # exponential ramp 'a'
-        lambda x: x.negative().exp(),  # affine 'α'
+        #lambda x: F.softplus(x) + 1e-3,  # exponential ramp 'a'
+        #lambda x: x.negative().exp(),  # affine 'α'
+        #lambda x: F.softplus(x) + 1e-3,
+        lambda x: torch.sigmoid(x) + 1e-3,
+        lambda x: torch.sigmoid(x) + 1e-3,
         torch.sigmoid,  # affine 'β'
         torch.sigmoid,  # weight wrt identity transform
     ]
@@ -105,7 +111,11 @@ def build_sigmoid_transform(
         n_params = (4 + int(weighted)) * n_mixture
 
         def __init__(self, params: Tensor):
+            #print("")
+            #print(params.abs().flatten().topk(4)[0])
             self.params = handle_params(params)
+            #print(self.params)#.abs().flatten().topk(4)[0])
+            #print("")
 
         def __call__(self, x: Tensor) -> tuple[Tensor, Tensor]:
             return transform(x, self.params)

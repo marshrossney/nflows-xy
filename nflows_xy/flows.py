@@ -137,7 +137,7 @@ class AutoregressiveFlow(Flow):
         for φ_t, f_t in zip(φ.split(1, dim=1), self.transforms):
             _, θ_tm1 = θ.tensor_split([-1], dim=1)
 
-            U = θ[:, 1:] - θ[:, :-1]
+            U = mod_2pi(θ[:, 1:] - θ[:, :-1])
 
             context = as_vector(U.transpose(1, 2).sum(dim=-1, keepdim=True))
 

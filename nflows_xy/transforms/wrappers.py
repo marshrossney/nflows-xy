@@ -54,6 +54,9 @@ def mix_with_identity_(transform: TransformFunc) -> TransformFunc:
 
         y, dydx = transform(x, params, **kwargs)
 
+        c = 0.72
+        #print(c.max().view(-1))
+
         y = c * y + (1 - c) * x
         dydx = c * dydx + (1 - c)
 

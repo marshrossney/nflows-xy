@@ -58,7 +58,8 @@ def plot_observable(
     bias = autocorrelations.errors.bias.abs()
     W_opt = autocorrelations.truncation_window
     i_cut = 2 * torch.argmax((Γ < 0).int())
-    log_Γ = torch.tensor(Γ[:i_cut]).log()
+    
+    log_Γ = Γ[:i_cut].log()
     mask = log_Γ.isfinite()
     log_Γ = log_Γ[mask].tolist()
     t = torch.arange(i_cut)[mask].tolist()
