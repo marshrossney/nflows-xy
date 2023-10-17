@@ -64,94 +64,29 @@ class AutoregressiveFlow(Flow):
         ]
         self.register_module("transforms", nn.ModuleList(transforms))
 
-    def forward(self, φ: Tensor) -> tuple[Tensor, Tensor]:
-        assert φ.shape[1] == len(self.transforms) + 1
-        return self._forward_v4(φ)
+    def forward(self, z: Tensor) -> tuple[Tensor, Tensor]:
+        φ0, z = z.tensor_split([1], dim=1)
 
-    def _forward_v1(self, φ):
-        φ0, φ = φ.tensor_split([1], dim=1)
-        φ = mod_2pi(φ - φ0)
-
-        θ = torch.zeros_like(φ0)
+        φ = φ0
         ldj = 0.0
-        for φ_t, f_t in zip(φ.split(1, dim=1), self.transforms):
-            context = as_vector(θ.transpose(1, 2))
+        for z_t, f_t in zip(z.split(1, dim=1), self.transforms, strict=True):
+            _, φ_tm1 = φ.tensor_split([-1], dim=1)
 
-            θ_t, ldj_t = f_t(context)(φ_t)
-
-            θ = torch.cat([θ, θ_t], dim=1)
-            ldj += ldj_t
-
-        θ = mod_2pi(θ + φ0)
-
-        return θ, ldj
-
-    def _forward_v2(self, φ: Tensor) -> tuple[Tensor, Tensor]:
-        φ0, φ = φ.tensor_split([1], dim=1)
-
-        θ = φ0
-        ldj = 0.0
-        for φ_t, f_t in zip(φ.split(1, dim=1), self.transforms):
-            _, θ_tm1 = θ.tensor_split([-1], dim=1)
-
-            context = as_vector((θ - θ_tm1).transpose(1, 2))
-
-            φ_t = mod_2pi(φ_t - θ_tm1)
-            θ_t, ldj_t = f_t(context)(φ_t)
-            θ_t = mod_2pi(θ_t + θ_tm1)
-
-            θ = torch.cat([θ, θ_t], dim=1)
-            ldj += ldj_t
-
-        return θ, ldj
-
-    def _forward_v3(self, φ: Tensor) -> tuple[Tensor, Tensor]:
-        φ0, φ = φ.tensor_split([1], dim=1)
-
-        θ = φ0
-        ldj = 0.0
-        for φ_t, f_t in zip(φ.split(1, dim=1), self.transforms):
-            _, θ_tm1 = θ.tensor_split([-1], dim=1)
-
-            U = θ[:, 1:] - θ[:, :-1]
-
-            context = as_vector(
-                U.transpose(1, 2)
-            )  # .sum(dim=-1, keepdim=True))
-
-            φ_t = mod_2pi(φ_t - θ_tm1)
-            θ_t, ldj_t = f_t(context)(φ_t)
-            θ_t = mod_2pi(θ_t + θ_tm1)
-
-            θ = torch.cat([θ, θ_t], dim=1)
-            ldj += ldj_t
-
-        return θ, ldj
-
-    def _forward_v4(self, φ: Tensor) -> tuple[Tensor, Tensor]:
-        """Same as v3 but just pass the sum of links"""
-        φ0, φ = φ.tensor_split([1], dim=1)
-
-        θ = φ0
-        ldj = 0.0
-        for φ_t, f_t in zip(φ.split(1, dim=1), self.transforms):
-            _, θ_tm1 = θ.tensor_split([-1], dim=1)
-
-            U = θ[:, 1:] - θ[:, :-1]
+            U = φ[:, 1:] - φ[:, :-1]
 
             context = as_vector(U.transpose(1, 2).sum(dim=-1, keepdim=True))
 
-            φ_t = mod_2pi(φ_t - θ_tm1)
-            θ_t, ldj_t = f_t(context)(φ_t)
-            θ_t = mod_2pi(θ_t + θ_tm1)
+            U_t = mod_2pi(z_t - φ_tm1)
+            U_t, ldj_t = f_t(context)(U_t)
+            φ_t = mod_2pi(U_t + φ_tm1)
 
-            θ = torch.cat([θ, θ_t], dim=1)
+            φ = torch.cat([φ, φ_t], dim=1)
             ldj += ldj_t
 
-        return θ, ldj
+        return φ, ldj
 
 
-class CouplingFlow(Flow):
+class SpinCouplingFlow(Flow):
     def __init__(
         self,
         n_blocks: int,
@@ -172,32 +107,30 @@ class CouplingFlow(Flow):
                 min_weight=min_weight,
                 ramp_pow=ramp_pow,
             )
-            for _ in range(4 * n_blocks)
+            for _ in range(2 * n_blocks)
         ]
         self.register_module("transforms", nn.ModuleList(transforms))
 
-    def forward(self, φ: Tensor) -> tuple[Tensor, Tensor]:
-        return self._forward_v1(φ)
-
-    def _forward_v1(self, φ):
-        assert φ.shape[1] % 2 == 0
+    def forward(self, z: Tensor) -> tuple[Tensor, Tensor]:
+        assert z.shape[1] % 2 == 0
         # NOTE: if we make angles relative to φ0 and don't also mask φ0 such that
         # it never gets transformed, we break the triangular Jacobian structure!!
-        φ0, _ = φ.tensor_split([1], dim=1)
-        φ = mod_2pi(φ - φ0)
+        φ0, _ = z.tensor_split([1], dim=1)
+        z = mod_2pi(z - φ0)
 
-        checker = φ.new_zeros(φ.shape[1]).bool()
+        checker = z.new_zeros(z.shape[1]).bool()
         checker[::2] = True
         m1, m2 = checker, ~checker
         m1[0] = False  # don't transform φ0 or things break!
 
+        φ = z
         ldj_total = 0.0
         for transform, mask in zip(self.transforms, cycle((m1, m2))):
-            φ_t = φ.clone()
-
             neighbours = torch.cat([φ.roll(-1, 1), φ.roll(+1, 1)], dim=-1)
             context = as_vector(neighbours[:, mask])
             f = transform(context)
+
+            φ_t = φ.clone()
             φ_t[:, mask], ldj = f(φ[:, mask])
 
             ldj_total += ldj
@@ -207,21 +140,48 @@ class CouplingFlow(Flow):
 
         return φ, ldj_total
 
-    def _forward_v2(self, φ):
+
+class LinkCouplingFlow(Flow):
+    def __init__(
+        self,
+        n_blocks: int,
+        n_mixture: int,
+        net_shape: list[int],
+        net_activation: str = "Tanh",
+        weighted: bool = True,
+        min_weight: float = 1e-2,
+        ramp_pow: int = 2,
+    ):
+        super().__init__()
+        transforms = [
+            build_sigmoid_module(
+                net_shape=net_shape,
+                net_activation=net_activation,
+                n_mixture=n_mixture,
+                weighted=weighted,
+                min_weight=min_weight,
+                ramp_pow=ramp_pow,
+            )
+            for _ in range(3 * n_blocks)
+        ]
+        self.register_module("transforms", nn.ModuleList(transforms))
+
+    def forward(self, z: Tensor) -> tuple[Tensor, Tensor]:
         """
         The masking pattern is
 
         o --- o ~~~ x --- o --- o
-           F    A     P     F
+           F     A     P     F
 
         A, P, F = active, passive frozen link variables
         U_x = φ_x - φ_{x-1}
         """
-        assert φ.shape[1] % 3 == 0
+        assert z.shape[1] % 3 == 0
 
-        mask = φ.new_zeros(φ.shape[1]).bool()
+        mask = z.new_zeros(z.shape[1]).bool()
         mask[::3] = True
 
+        φ = z
         ldj_total = 0.0
         for transform in self.transforms:
             U = mod_2pi(φ - φ.roll(+1, 1))
@@ -245,9 +205,9 @@ class CouplingFlow(Flow):
             φ = torch.where(
                 mask.view(1, -1, 1), mod_2pi(U_t + φ.roll(+1, 1)), φ
             )
-
             ldj_total += ldj
 
+            # Roll mask to select next set of spins
             mask = mask.roll(-1)
 
         return φ, ldj_total

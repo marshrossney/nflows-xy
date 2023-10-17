@@ -1,11 +1,12 @@
 model:
-  class_path: AutoregressiveFlow
+  class_path: LinkCouplingFlow
   init_args:
-    lattice_size: 6
+    n_blocks: 4
     n_mixture: 6
     weighted: true
     net_shape: [16]
     net_activation: Tanh
+    ramp_pow: 2
 
 target:
   beta: 2.
@@ -15,5 +16,3 @@ target:
 train:
   n_steps: 1000
   batch_size: 1024
-
-

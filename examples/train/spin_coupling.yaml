@@ -1,0 +1,18 @@
+model:
+  class_path: SpinCouplingFlow
+  init_args:
+    n_blocks: 4
+    n_mixture: 6
+    weighted: true
+    net_shape: [16]
+    net_activation: Tanh
+    ramp_pow: 2
+
+target:
+  beta: 2.
+  lattice_size: 6
+  lattice_dim: 1
+
+train:
+  n_steps: 1000
+  batch_size: 1024

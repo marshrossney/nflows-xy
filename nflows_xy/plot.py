@@ -84,7 +84,8 @@ def plot_observable(
     W_opt = autocorrelations.truncation_window
 
     # Select a cutoff δx for the plots
-    i_cut = min(2 * torch.argmax((Γ < 0).int()), n_samp // 2 - 1)
+    # i_cut = min(torch.argmax((Γ < 0).int()).item(), n_samp // 2 - 1)
+    i_cut = min(4 * W_opt.item(), n_samp // 2 - 1)
     log_Γ = Γ[:i_cut].log()
     mask = log_Γ.isfinite()
     log_Γ = log_Γ[mask].tolist()
@@ -97,7 +98,6 @@ def plot_observable(
     stat = stat.tolist()
     bias = bias.tolist()
     W_opt = W_opt.item()
-    i_cut = i_cut.item()
 
     dict_of_figs = {}
 
@@ -133,6 +133,7 @@ def plot_observable(
     fig = plotille.Figure()
     fig.x_label = "W"
     fig.y_label = f"[{label}] ε(W)"
+    fig.set_x_limits(min_=0, max_=i_cut)
     fig.plot(range(i_cut), stat[:i_cut], lc="blue", label="stat")
     fig.plot(range(i_cut), bias[:i_cut], lc="yellow", label="bias")
     fig.plot(range(i_cut), total[:i_cut], lc="green", label="total")

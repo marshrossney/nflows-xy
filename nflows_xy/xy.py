@@ -47,9 +47,8 @@ def fit_spin_correlation(G: Tensor) -> Tensor:
     log_G = G.mean(0).log()
 
     def func_to_fit(x: Tensor, ξ: float, c: float):
-        assert (
-            x.dtype == torch.float64
-        )  # see note on scipy.optimizer.curve_fit docs
+        # see note on scipy.optimizer.curve_fit docs
+        assert x.dtype == torch.float64
         log_G_fit = log_cosh((x - L / 2) / ξ) + c
         return log_G_fit.numpy()
 
@@ -135,9 +134,3 @@ def action(
         return Action1d(beta, lattice_size)
     else:
         raise ValueError("Only one dimension supported so far")
-    """
-    elif lattice_dim == 2:
-        return Action2d(beta, lattice_size)
-    else:
-        raise ValueError("Only one or two dimensions supported")
-    """
