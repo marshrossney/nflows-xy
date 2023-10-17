@@ -2,6 +2,7 @@ import plotille
 import torch
 
 from nflows_xy.autocorr import ComputedAutocorrelations
+from nflows_xy.xy import log_cosh
 
 Tensor = torch.Tensor
 
@@ -46,19 +47,45 @@ def plot_test_metrics(metrics):
     return output
 
 
+def plot_spin_correlation(
+    log_G: Tensor,
+    ξ: float,
+    c: float,
+):
+    L = len(log_G)
+    mask = log_G.isfinite()
+    log_G = log_G[mask].tolist()
+    x = torch.arange(L)[mask].tolist()
+
+    xx = torch.linspace(0, L, 100)
+    log_G_fit = log_cosh((xx - L / 2) / ξ) + c
+
+    fig = plotille.Figure()
+    fig.x_label = "δx"
+    fig.y_label = "log G(δx)"
+    fig.set_x_limits(min_=0, max_=L - 1)
+    fig.plot(xx.tolist(), log_G_fit.tolist(), lc="red", label="fit")
+    fig.scatter(x, log_G, lc="blue", marker="+", label="data")
+
+    return fig.show(legend=True)
+
+
 def plot_observable(
     observable: Tensor,
     autocorrelations: ComputedAutocorrelations,
     label: str,
 ) -> dict[str, str]:
     X = observable.squeeze(-1)  # scalars_only
+    n_rep, n_samp = X.shape
     Γ = autocorrelations.autocorrelation
     τ = 0.5 * Γ.cumsum(0)
     stat = autocorrelations.errors.stat.abs()
     bias = autocorrelations.errors.bias.abs()
     W_opt = autocorrelations.truncation_window
-    i_cut = 2 * torch.argmax((Γ < 0).int())
-    log_Γ = torch.tensor(Γ[:i_cut]).log()
+
+    # Select a cutoff δx for the plots
+    i_cut = min(2 * torch.argmax((Γ < 0).int()), n_samp // 2 - 1)
+    log_Γ = Γ[:i_cut].log()
     mask = log_Γ.isfinite()
     log_Γ = log_Γ[mask].tolist()
     t = torch.arange(i_cut)[mask].tolist()

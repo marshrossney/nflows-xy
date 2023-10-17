@@ -14,10 +14,12 @@ import pandas as pd
 
 from nflows_xy.autocorr import autocorrelations
 from nflows_xy.hmc import hmc
-from nflows_xy.plot import plot_observable
+from nflows_xy.plot import plot_observable, plot_spin_correlation
 from nflows_xy.xy import action, top_charge
 from nflows_xy.scripts.io import SamplingDirectory
 from nflows_xy.utils import make_banner
+
+from nflows_xy.xy import spin_correlation, fit_spin_correlation
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -63,15 +65,25 @@ def main(config: Namespace) -> None:
 
     Q = top_charge(φ)
     Γ_Q = autocorrelations(Q)
+    print("Q: ", Q.shape)
     logger.info("Plotting the topological charge...")
     figs = plot_observable(Q, Γ_Q, "Q")
 
     print(make_banner("Topological Charge plots"))
     print("\n".join(list(figs.values())))
 
+    G = spin_correlation(φ)
+    (ξ, c), cov = fit_spin_correlation(G)
+    logger.info("Plotting the spin correlation function...")
+    fig = plot_spin_correlation(G.mean(0).log(), ξ, c)
+
+    print(make_banner("Spin correlation"))
+    print(fig)
+
     metrics = pd.Series(
         asdict(metrics)
         | {
+            "corr_len": ξ.item(),
             "tau_int_S": Γ_S.integrated,
             "tau_int_Q": Γ_Q.integrated,
         }

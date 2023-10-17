@@ -94,7 +94,7 @@ def hmc(
 
             φ0 = φ0.clone()
             p0 = torch.empty_like(φ0).normal_()
-            H0 = 0.5 * p0.pow(2).sum(dim=1) + action(φ0)
+            H0 = 0.5 * p0.pow(2).sum(dim=-2) + action(φ0)
 
             φT, pT, T = leapfrog(
                 φ0,
@@ -104,7 +104,7 @@ def hmc(
                 traj_length,
             )
 
-            HT = 0.5 * pT.pow(2).sum(dim=1) + action(φT)
+            HT = 0.5 * pT.pow(2).sum(dim=-2) + action(φT)
             ΔH = HT - H0
 
             accepted = torch.squeeze(

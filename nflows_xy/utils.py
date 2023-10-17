@@ -1,4 +1,4 @@
-from math import pi as π
+from math import log, pi as π
 
 import torch
 from torch import einsum
@@ -24,6 +24,11 @@ def dot(u: Tensor, v: Tensor) -> Tensor:
 
 def dot_keepdim(u: Tensor, v: Tensor) -> Tensor:
     return dot(u, v).unsqueeze(-1)
+
+
+def log_cosh(x: Tensor) -> Tensor:
+    # Numerically stable implementation of log(cosh(x))
+    return abs(x) + torch.log1p(torch.exp(-2 * abs(x))) - log(2)
 
 
 def make_banner(txt: str, size: int = 79) -> str:

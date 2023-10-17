@@ -1,11 +1,16 @@
 from abc import ABC, abstractmethod
+import logging
 from math import pi as π
 
+import scipy
 import torch
 
-from nflows_xy.utils import mod_2pi
+from nflows_xy.utils import mod_2pi, log_cosh
 
 Tensor = torch.Tensor
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def top_charge(φ: Tensor) -> Tensor:
@@ -13,6 +18,54 @@ def top_charge(φ: Tensor) -> Tensor:
     U = φ - φ.roll(+1, -2)
     q = (mod_2pi(U + π) - π) / (2 * π)
     return q.sum(dim=-2)
+
+
+def spin_correlation(φ: Tensor) -> Tensor:
+    """
+    G(δx) = E[σ(x) . σ(x+δx)] - E[σ(x)]E[σ(x+δx)]
+          = E[cos(φ(x) - φ(x+δx))] - (0)(0)
+    """
+    assert φ.shape[-1] == 1
+    L = φ.shape[-2]
+    G = []
+    for δx in range(L):
+        # Take volume average as well as ensemble average
+        G.append(torch.cos(φ - φ.roll(δx, -2)).mean(dim=(-3, -2)))
+    return torch.cat(G, dim=-1)
+
+
+def fit_spin_correlation(G: Tensor) -> Tensor:
+    """
+    Quick and dirty log cosh fit for the spin correlation function.
+
+    Caveats:
+    - Errors not treated properly: should probably bootstrap this or at least
+      pass sample std dev to optimize.curve_fit
+    - Fit includes all points except δx = 0, which is not quite right
+    """
+    _, L = G.shape
+    log_G = G.mean(0).log()
+
+    def func_to_fit(x: Tensor, ξ: float, c: float):
+        assert (
+            x.dtype == torch.float64
+        )  # see note on scipy.optimizer.curve_fit docs
+        log_G_fit = log_cosh((x - L / 2) / ξ) + c
+        return log_G_fit.numpy()
+
+    ydata = log_G[1:]
+    mask = ydata.isfinite()
+    ydata = ydata[mask]
+    xdata = torch.arange(1, L)[mask]
+
+    popt, pcov = scipy.optimize.curve_fit(
+        func_to_fit,
+        xdata=xdata.to(torch.float64),
+        ydata=ydata.to(torch.float64),
+        p0=(L / 4, 0.0),
+        bounds=((0.0, -float("inf")), (float("inf"), float("inf"))),
+    )
+    return torch.from_numpy(popt), torch.from_numpy(pcov)
 
 
 class Action(ABC):
@@ -80,7 +133,11 @@ def action(
     """
     if lattice_dim == 1:
         return Action1d(beta, lattice_size)
+    else:
+        raise ValueError("Only one dimension supported so far")
+    """
     elif lattice_dim == 2:
         return Action2d(beta, lattice_size)
     else:
         raise ValueError("Only one or two dimensions supported")
+    """
