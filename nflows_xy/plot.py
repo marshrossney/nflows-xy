@@ -78,7 +78,7 @@ def plot_observable(
     X = observable.squeeze(-1)  # scalars_only
     n_rep, n_samp = X.shape
     Γ = autocorrelations.autocorrelation
-    τ = 0.5 * Γ.cumsum(0)
+    τ = Γ.cumsum(0) - 0.5
     stat = autocorrelations.errors.stat.abs()
     bias = autocorrelations.errors.bias.abs()
     W_opt = autocorrelations.truncation_window

@@ -65,25 +65,30 @@ class AutoregressiveFlow(Flow):
         self.register_module("transforms", nn.ModuleList(transforms))
 
     def forward(self, z: Tensor) -> tuple[Tensor, Tensor]:
-        φ0, z = z.tensor_split([1], dim=1)
+        φ0, *z = z.split(1, dim=1)
 
         φ = φ0
-        ldj = 0.0
-        for z_t, f_t in zip(z.split(1, dim=1), self.transforms, strict=True):
-            _, φ_tm1 = φ.tensor_split([-1], dim=1)
+        ldj_total = 0.0
+        for z_x, transform in zip(z, self.transforms, strict=True):
+            # Construct conditional transformation using context Σ_{i=0}^{x-1} U_i
+            ΣU = (
+                (φ[:, 1:] - φ[:, :-1])
+                .transpose(1, 2)
+                .sum(dim=-1, keepdim=True)
+            )
+            context = as_vector(ΣU)
+            f = transform(context)
 
-            U = φ[:, 1:] - φ[:, :-1]
+            # Transform V_x -> U_x = f(V_x | Σ_{i=0}^{x-1} U_i)
+            _, φ_x_minus_1 = φ.tensor_split([-1], dim=1)
+            V_x = mod_2pi(z_x - φ_x_minus_1)
+            U_x, ldj_x = f(V_x)
+            φ_x = mod_2pi(U_x + φ_x_minus_1)
 
-            context = as_vector(U.transpose(1, 2).sum(dim=-1, keepdim=True))
+            φ = torch.cat([φ, φ_x], dim=1)
+            ldj_total += ldj_x
 
-            U_t = mod_2pi(z_t - φ_tm1)
-            U_t, ldj_t = f_t(context)(U_t)
-            φ_t = mod_2pi(U_t + φ_tm1)
-
-            φ = torch.cat([φ, φ_t], dim=1)
-            ldj += ldj_t
-
-        return φ, ldj
+        return φ, ldj_total
 
 
 class SpinCouplingFlow(Flow):
@@ -113,28 +118,30 @@ class SpinCouplingFlow(Flow):
 
     def forward(self, z: Tensor) -> tuple[Tensor, Tensor]:
         assert z.shape[1] % 2 == 0
-        # NOTE: if we make angles relative to φ0 and don't also mask φ0 such that
-        # it never gets transformed, we break the triangular Jacobian structure!!
-        φ0, _ = z.tensor_split([1], dim=1)
-        z = mod_2pi(z - φ0)
 
         checker = z.new_zeros(z.shape[1]).bool()
         checker[::2] = True
         m1, m2 = checker, ~checker
         m1[0] = False  # don't transform φ0 or things break!
 
-        φ = z
+        # NOTE: if we make angles relative to φ0 and don't also mask φ0 such that
+        # it never gets transformed, we break the triangular Jacobian structure!!
+        φ0, _ = z.tensor_split([1], dim=1)
+        φ = mod_2pi(z - φ0)
+
         ldj_total = 0.0
         for transform, mask in zip(self.transforms, cycle((m1, m2))):
-            neighbours = torch.cat([φ.roll(-1, 1), φ.roll(+1, 1)], dim=-1)
+            z = φ
+
+            # Just take the nearest neighbours as context
+            neighbours = torch.cat([z.roll(-1, 1), z.roll(+1, 1)], dim=-1)
             context = as_vector(neighbours[:, mask])
             f = transform(context)
 
-            φ_t = φ.clone()
-            φ_t[:, mask], ldj = f(φ[:, mask])
+            φ = z.clone()
+            φ[:, mask], ldj = f(z[:, mask])
 
             ldj_total += ldj
-            φ = φ_t
 
         φ = mod_2pi(φ + φ0)
 
@@ -176,15 +183,16 @@ class LinkCouplingFlow(Flow):
         A, P, F = active, passive frozen link variables
         U_x = φ_x - φ_{x-1}
         """
-        assert z.shape[1] % 3 == 0
+        _, L, _ = z.shape
+        assert L % 3 == 0
 
-        mask = z.new_zeros(z.shape[1]).bool()
-        mask[::3] = True
+        mask = torch.tensor(
+            [True, False, False], dtype=torch.bool, device=z.device
+        ).repeat(L // 3)
 
-        φ = z
         ldj_total = 0.0
         for transform in self.transforms:
-            U = mod_2pi(φ - φ.roll(+1, 1))
+            V = mod_2pi(z - z.roll(+1, 1))
 
             # assert torch.allclose(U.roll(-1, 1), mod_2pi(φ.roll(-1, 1) - φ))
             # assert torch.allclose(U.roll(+1, 1), mod_2pi(φ.roll(+1, 1) - φ.roll(+2, 1)))
@@ -194,18 +202,18 @@ class LinkCouplingFlow(Flow):
             # I.e. if φ_x is the active spin and U_x is the active link, then stack
             # U_{x-1} = (φ_{x-1} - φ_{x-2}) and U_{x+2} = (φ_{x+2} - φ_{x+1}) on x
             context = as_vector(
-                torch.cat([U.roll(+1, 1), U.roll(-2, 1)], dim=-1)[:, mask]
+                torch.cat([V.roll(+1, 1), V.roll(-2, 1)], dim=-1)[:, mask]
             )
             f = transform(context)
 
-            U_t = U.clone()
-            U_t[:, mask], ldj = f(U[:, mask])
+            U = V.clone()
+            U[:, mask], ldj = f(V[:, mask])
 
             # Change variables back to spins
-            φ = torch.where(
-                mask.view(1, -1, 1), mod_2pi(U_t + φ.roll(+1, 1)), φ
-            )
+            φ = torch.where(mask.view(1, -1, 1), mod_2pi(U + z.roll(+1, 1)), z)
+
             ldj_total += ldj
+            z = φ
 
             # Roll mask to select next set of spins
             mask = mask.roll(-1)
