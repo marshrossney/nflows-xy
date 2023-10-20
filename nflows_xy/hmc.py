@@ -146,10 +146,13 @@ def fhmc(
     """
     Alias for hmc(PullbackAction(flow, target), **kwargs).
     """
-    return hmc(
+    u, metrics = hmc(
         PullbackAction(flow, target),
         n_replica=n_replica,
         n_traj=n_traj,
         step_size=step_size,
         traj_length=traj_length,
     )
+    φ, _ = flow(u.flatten(0, 1))
+    φ = φ.unflatten(0, u.shape[:2])
+    return φ, metrics

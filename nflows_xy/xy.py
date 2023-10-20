@@ -53,12 +53,12 @@ def fit_spin_correlation(G: Tensor) -> Tensor:
         return log_G_fit.numpy()
 
     ydata = log_G[1:]
-    #K = 20
-    #ydata = log_G[K:-K]
+    # K = 20
+    # ydata = log_G[K:-K]
     mask = ydata.isfinite()
     ydata = ydata[mask]
     xdata = torch.arange(1, L)[mask]
-    #xdata = torch.arange(K, L - K)[mask]
+    # xdata = torch.arange(K, L - K)[mask]
 
     popt, pcov = scipy.optimize.curve_fit(
         func_to_fit,

@@ -24,15 +24,19 @@ class PullbackAction(Action):
     @torch.enable_grad()
     def grad(self, u: Tensor) -> Tensor:
         u.requires_grad_(True)
+        u.grad = None
         φ, ldj = self.flow(u)
 
-        pullback = self.target(φ) - ldj
+        action = self.target(φ) - ldj
 
         (gradient,) = torch.autograd.grad(
-            outputs=pullback,
+            outputs=action,
             inputs=u,
-            grad_outputs=torch.ones_like(pullback),
+            grad_outputs=torch.ones_like(action),
         )
+
+        u.requires_grad_(False)
+        u.grad = None
 
         return gradient
 

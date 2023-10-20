@@ -137,3 +137,13 @@ One-dimensional autoregressive flow model:
 ```
 
 For more details see the [jsonargparse docs](https://jsonargparse.readthedocs.io/en).
+
+## To do list
+
+- [ ] Mobius or projection transforms to wrapped Cauchy
+- [ ] Hierarchical coupling flow
+- [ ] Cauchy distributed momenta
+- [ ] Visualisation of correlation between E[log w] and force
+- [ ] Spline transforms with inverse
+- [ ] Inverse of the sigmoid transforms
+- [ ] Reduced variance loss function
