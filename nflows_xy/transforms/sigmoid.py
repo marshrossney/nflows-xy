@@ -14,7 +14,7 @@ from .wrappers import (
     mixture_,
     mix_with_identity_,
 )
-from .utils import normalise_weights
+from .utils import normalise_weights, normalise_single_weight
 
 Tensor: TypeAlias = torch.Tensor
 TransformFunc: TypeAlias = Callable[
@@ -24,7 +24,7 @@ Transform: TypeAlias = Callable[Tensor, tuple[Tensor, Tensor]]
 
 
 def exponential_ramp(
-    x: Tensor, params: Tensor, *, power: int = 2, eps: float = 1e-9
+    x: Tensor, params: Tensor, *, power: int, eps: float = 1e-6
 ) -> tuple[Tensor, Tensor]:
     assert isinstance(power, int) and power > 0
     a, b, ε = params, power, eps
@@ -35,7 +35,8 @@ def exponential_ramp(
         torch.exp(exp_factor) / torch.exp(-a),
         torch.zeros_like(x),
     )
-    dρdx = (-b / x_masked) * exp_factor * ρ
+    # NOTE: don't need a `where` since dρdx=0 where x<ε already
+    dρdx = a * b * x_masked.pow(-(b + 1)) * ρ
     return ρ, dρdx
 
 
@@ -86,9 +87,10 @@ def build_sigmoid_transform(
 
     funcs = [
         lambda x: F.softplus(x) + 1e-3,  # exponential ramp 'a'
-        lambda x: x.negative().exp(),  # affine 'α'
+        #lambda x: F.softplus(x) + 1e-3,  # affine 'α'
+        lambda x: x.negative().exp() + 1e-3,  # affine 'α'
         torch.sigmoid,  # affine 'β'
-        torch.sigmoid,  # weight wrt identity transform
+        partial(normalise_single_weight, min=min_weight),  # weight wrt identity transform
     ]
     if weighted:
         funcs.append(partial(normalise_weights, dim=-2, min=min_weight))
