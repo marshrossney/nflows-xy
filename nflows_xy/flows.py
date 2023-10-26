@@ -1,14 +1,18 @@
 from abc import ABC, abstractmethod
 from itertools import cycle
+from math import pi as π
 
 import torch
 import torch.nn as nn
 
 from nflows_xy.transforms import build_sigmoid_module
+from nflows_xy.transforms.mobius import mobius
 from nflows_xy.utils import mod_2pi, as_vector
 
 Tensor = torch.Tensor
 
+
+#mobius = torch.vmap(mobius)
 
 class Flow(nn.Module, ABC):
     @abstractmethod
@@ -64,6 +68,8 @@ class AutoregressiveFlow(Flow):
         ]
         self.register_module("transforms", nn.ModuleList(transforms))
 
+        self.shift = nn.Parameter(torch.tensor(0.))
+
     def forward(self, z: Tensor) -> tuple[Tensor, Tensor]:
         φ0, *z = z.split(1, dim=1)
 
@@ -76,13 +82,27 @@ class AutoregressiveFlow(Flow):
                 .transpose(1, 2)
                 .sum(dim=-1, keepdim=True)
             )
-            context = as_vector(ΣU)
-            f = transform(context)
 
             # Transform V_x -> U_x = f(V_x | Σ_{i=0}^{x-1} U_i)
             _, φ_x_minus_1 = φ.tensor_split([-1], dim=1)
             V_x = mod_2pi(z_x - φ_x_minus_1)
+            
+            β = 0.25
+            κ = 2 * β * torch.cos(0.5 * ΣU)
+            ρ = torch.exp(-2 / κ.sqrt())
+            ξ = mod_2pi(-0.5 * ΣU)
+            print(ξ)
+            cauchy_ψ = torch.polar(ρ, ξ)
+            ω = torch.view_as_real(cauchy_ψ).squeeze(-2)
+            V_x, grad_mobius = mobius(V_x, ω)
+            V_x = mod_2pi(V_x - π)
+            ldj_total += grad_mobius.log().squeeze(1)
+
+            context = as_vector(ΣU)
+            f = transform(context)
+
             U_x, ldj_x = f(V_x)
+            #U_x = mod_2pi(V_x + self.shift)
             φ_x = mod_2pi(U_x + φ_x_minus_1)
 
             φ = torch.cat([φ, φ_x], dim=1)

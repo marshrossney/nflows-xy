@@ -1,7 +1,10 @@
+from math import pi as π
+
 import plotille
 import torch
 
 from nflows_xy.autocorr import ComputedAutocorrelations
+from nflows_xy.utils import mod_2pi
 from nflows_xy.xy import log_cosh
 
 Tensor = torch.Tensor
@@ -45,6 +48,23 @@ def plot_test_metrics(metrics):
         )
         output[metric] = fig.show()
     return output
+
+
+def plot_spins(φ: Tensor):
+
+    φ0, φ1, *_ = φ.split(1, dim=-2)
+    φ1 = mod_2pi(φ1 - φ0 + π) - π
+    φ1 = φ1.flatten().tolist()
+
+    fig = plotille.Figure()
+    fig.x_label = "φ1 - φ0"
+    fig.y_label = "count"
+    fig.set_x_limits(min_=-π, max_=π)
+    fig.histogram(
+        φ1,
+        bins=25,
+    )
+    return fig.show()
 
 
 def plot_spin_correlation(

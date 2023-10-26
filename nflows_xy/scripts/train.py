@@ -68,6 +68,13 @@ def main(config: Namespace) -> None:
 
     training_metrics = train(model, **config.train)
 
+    from nflows_xy.plot import plot_spins
+    fields, actions = model(10000)
+    fig = plot_spins(fields.outputs)
+    print(make_banner("Histogram of spins"))
+    print(fig)
+    assert False
+
     logger.info("Plotting training metrics...")
     figs = plot_training_metrics(training_metrics)
     print(make_banner("Training metrics"))
