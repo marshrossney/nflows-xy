@@ -36,6 +36,7 @@ def make_func(func):
 
     return _func2
 
+
 def make_func_v2(cls):
     def _func(x, params):
         func = cls(params.unsqueeze(0))
@@ -58,7 +59,7 @@ def test_grad_agrees_with_autograd():
 
     a = F.softplus(x.new_empty(N, L, 1).normal_()) + 2
     α = F.softplus(x.new_empty(N, L, 1).normal_()) - 2
-    #α = x.new_empty(N, L, 1).normal_().sub(10).negative().exp()
+    # α = x.new_empty(N, L, 1).normal_().sub(10).negative().exp()
     β = torch.sigmoid(x.new_empty(N, L, 1).normal_())
     c = x.new_ones(N, L, 1)
 
@@ -77,7 +78,7 @@ def test_grad_agrees_with_autograd():
     print(man.mean().item(), man.std().item(), man.abs().max().item())
     assert torch.allclose(man, auto)
 
-    #f = make_func_v2(build_sigmoid_transform(n_mixture=1, weighted=False))
-    #auto, man = f(x * 2 * π, torch.cat((a, α, β, c), dim=-1))
-    #print(man.mean().item(), man.std().item(), man.abs().max().item())
-    #assert torch.allclose(man, auto)
+    # f = make_func_v2(build_sigmoid_transform(n_mixture=1, weighted=False))
+    # auto, man = f(x * 2 * π, torch.cat((a, α, β, c), dim=-1))
+    # print(man.mean().item(), man.std().item(), man.abs().max().item())
+    # assert torch.allclose(man, auto)

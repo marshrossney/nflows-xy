@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from itertools import cycle
+from math import isclose, log, pi as π
 
 import torch
 import torch.nn as nn
@@ -87,6 +88,68 @@ class AutoregressiveFlow(Flow):
 
             φ = torch.cat([φ, φ_x], dim=1)
             ldj_total += ldj_x
+
+        return φ, ldj_total
+
+
+class HierarchicalFlow(Flow):
+    def __init__(
+        self,
+        lattice_size: int,
+        n_mixture: int,
+        net_shape: list[int],
+        net_activation: str = "Tanh",
+        weighted: bool = True,
+        min_weight: float = 1e-2,
+        ramp_pow: int = 2,
+    ):
+        super().__init__()
+        # Check lattice size is a power of two
+        assert lattice_size & (lattice_size - 1) == 0
+        n_layers = log(lattice_size, 2)
+        assert isclose(n_layers, int(n_layers))
+        transforms = [
+            build_sigmoid_module(
+                net_shape=net_shape,
+                net_activation=net_activation,
+                n_mixture=n_mixture,
+                weighted=weighted,
+                min_weight=min_weight,
+                ramp_pow=ramp_pow,
+            )
+            for _ in range(int(n_layers))
+        ]
+        self.register_module("transforms", nn.ModuleList(transforms))
+
+    def forward(self, z: Tensor) -> tuple[Tensor, Tensor]:
+        φ0, _ = z.tensor_split([1], dim=1)
+        z = mod_2pi(z - φ0)
+
+        φ, z = z.tensor_split([1], dim=1)
+        ldj_total = 0.0
+        for transform in self.transforms:
+            context = as_vector(φ - φ.roll(-1, 1))
+            f = transform(context)
+
+            # Double the number of degrees of freedom
+            z_x, z = z.tensor_split([φ.shape[1]], dim=1)
+
+            φ_x, ldj_x = f(z_x)
+
+            φ_x = mod_2pi(φ_x + π) - π
+            Φ = mod_2pi(0.5 * (φ + φ.roll(-1, 1)) + π) - π
+            φ_x = mod_2pi(φ_x + Φ)
+
+            ldj_total += ldj_x
+
+            L = φ.shape[1]
+            φ = torch.cat([φ, φ_x], dim=-1).view(-1, 2 * L, 1)
+            print(φ[0])
+
+        assert z.numel() == 0
+
+        φ = mod_2pi(φ + φ0)
+        print("")
 
         return φ, ldj_total
 

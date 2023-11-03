@@ -13,7 +13,7 @@ from jsonargparse.typing import Path_dc
 import torch
 
 from nflows_xy.core import Flow, FlowBasedSampler
-from nflows_xy.plot import plot_training_metrics, plot_test_metrics
+from nflows_xy.plot import plot_training_metrics, plot_test_metrics, plot_spins
 from nflows_xy.scripts.io import TrainingDirectory
 from nflows_xy.train import train, test
 from nflows_xy.utils import make_banner
@@ -67,6 +67,13 @@ def main(config: Namespace) -> None:
     model = model.to(device=device, dtype=dtype)
 
     training_metrics = train(model, **config.train)
+
+    fields, actions = model(500000)
+    fig = plot_spins(fields.outputs)
+    print(fig)
+    # print(fields.inputs - fields.inputs[:, :1, :])
+    # print(fields.outputs - fields.outputs[:,:1,:])
+    assert False
 
     logger.info("Plotting training metrics...")
     figs = plot_training_metrics(training_metrics)

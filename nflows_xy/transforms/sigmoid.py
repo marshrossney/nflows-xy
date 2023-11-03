@@ -87,10 +87,12 @@ def build_sigmoid_transform(
 
     funcs = [
         lambda x: F.softplus(x) + 1e-3,  # exponential ramp 'a'
-        #lambda x: F.softplus(x) + 1e-3,  # affine 'α'
-        lambda x: x.negative().exp() + 1e-3,  # affine 'α'
+        lambda x: F.softplus(x) + 1e-3,  # affine 'α'
+        # lambda x: x.negative().exp() + 1e-3,  # affine 'α'
         torch.sigmoid,  # affine 'β'
-        partial(normalise_single_weight, min=min_weight),  # weight wrt identity transform
+        partial(
+            normalise_single_weight, min=min_weight
+        ),  # weight wrt identity transform
     ]
     if weighted:
         funcs.append(partial(normalise_weights, dim=-2, min=min_weight))
