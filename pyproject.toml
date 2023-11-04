@@ -20,6 +20,8 @@ jsonargparse = {extras = ["signatures"], version = "^4.25.0"}
 matplotlib = "^3.8.0"
 plotille = "^5.0.0"
 scipy = "^1.11.3"
+jupyterlab = "^4.0.8"
+seaborn = "^0.13.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "^8.16.1"
