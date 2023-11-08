@@ -57,7 +57,7 @@ def plot_spins(φ: Tensor):
     φ = mod_2pi(φ - φ0 + π) - π
 
     fig = plotille.Figure()
-    fig.x_label = f"φx - φ0"
+    fig.x_label = "φx - φ0"
     fig.y_label = "count"
     fig.set_x_limits(min_=-π, max_=π)
 

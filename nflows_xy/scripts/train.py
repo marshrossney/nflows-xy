@@ -71,9 +71,6 @@ def main(config: Namespace) -> None:
     fields, actions = model(500000)
     fig = plot_spins(fields.outputs)
     print(fig)
-    # print(fields.inputs - fields.inputs[:, :1, :])
-    # print(fields.outputs - fields.outputs[:,:1,:])
-    assert False
 
     logger.info("Plotting training metrics...")
     figs = plot_training_metrics(training_metrics)

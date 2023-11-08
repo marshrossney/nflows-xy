@@ -137,19 +137,19 @@ class HierarchicalFlow(Flow):
             φ_x, ldj_x = f(z_x)
 
             φ_x = mod_2pi(φ_x + π) - π
-            Φ = mod_2pi(0.5 * (φ + φ.roll(-1, 1)) + π) - π
-            φ_x = mod_2pi(φ_x + Φ)
+
+            cosφ, sinφ = φ.cos(), φ.sin()
+            α = torch.atan2(sinφ + sinφ.roll(-1, 1), cosφ + cosφ.roll(-1, 1))
+            φ_x = mod_2pi(φ_x + α)
 
             ldj_total += ldj_x
 
             L = φ.shape[1]
             φ = torch.cat([φ, φ_x], dim=-1).view(-1, 2 * L, 1)
-            print(φ[0])
 
         assert z.numel() == 0
 
         φ = mod_2pi(φ + φ0)
-        print("")
 
         return φ, ldj_total
 
