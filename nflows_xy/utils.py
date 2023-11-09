@@ -18,6 +18,10 @@ def as_vector(φ: Tensor) -> Tensor:
     return torch.cat([φ.cos(), φ.sin()], dim=-1)
 
 
+def mean_angle(*φ: Tensor) -> Tensor:
+    return as_angle(as_vector(torch.stack(φ, dim=-2)).sum(dim=-2))
+
+
 def dot(u: Tensor, v: Tensor) -> Tensor:
     return einsum("...i,...i->...", u, v)
 

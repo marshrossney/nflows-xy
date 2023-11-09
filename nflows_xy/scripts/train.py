@@ -68,7 +68,9 @@ def main(config: Namespace) -> None:
 
     training_metrics = train(model, **config.train)
 
-    fields, actions = model(500000)
+    model = model.to("cpu")
+
+    fields, actions = model(10000)
     fig = plot_spins(fields.outputs)
     print(fig)
 

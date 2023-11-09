@@ -1,16 +1,16 @@
 model:
-  class_path: LinkCouplingFlow
+  class_path: HierarchicalFlow
   init_args:
-    n_blocks: 2
+    lattice_size: 8
     n_mixture: 12
     weighted: false
-    net_shape: [24]
+    net_shape: [12]
     net_activation: Tanh
     ramp_pow: 2
 
 target:
   beta: 3.
-  lattice_size: 9
+  lattice_size: 8
   lattice_dim: 1
 
 train:

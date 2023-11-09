@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 
 from nflows_xy.transforms import build_sigmoid_module
-from nflows_xy.utils import mod_2pi, as_vector
+from nflows_xy.utils import mod_2pi, as_vector, mean_angle
 
 Tensor = torch.Tensor
 
@@ -122,34 +122,30 @@ class HierarchicalFlow(Flow):
         self.register_module("transforms", nn.ModuleList(transforms))
 
     def forward(self, z: Tensor) -> tuple[Tensor, Tensor]:
-        φ0, _ = z.tensor_split([1], dim=1)
-        z = mod_2pi(z - φ0)
-
         φ, z = z.tensor_split([1], dim=1)
         ldj_total = 0.0
+
         for transform in self.transforms:
+            # Difference between neighbouring angles
             context = as_vector(φ - φ.roll(-1, 1))
             f = transform(context)
 
             # Double the number of degrees of freedom
             z_x, z = z.tensor_split([φ.shape[1]], dim=1)
 
-            φ_x, ldj_x = f(z_x)
+            # Transform uniform variates
+            φ_x, ldj = f(z_x)
+            ldj_total += ldj
 
-            φ_x = mod_2pi(φ_x + π) - π
-
-            cosφ, sinφ = φ.cos(), φ.sin()
-            α = torch.atan2(sinφ + sinφ.roll(-1, 1), cosφ + cosφ.roll(-1, 1))
+            # Rotate to average angle of neighbouring spins
+            α = mean_angle(φ, φ.roll(-1, 1))
             φ_x = mod_2pi(φ_x + α)
 
-            ldj_total += ldj_x
-
+            # Interleave the new φ between the existing ones
             L = φ.shape[1]
             φ = torch.cat([φ, φ_x], dim=-1).view(-1, 2 * L, 1)
 
         assert z.numel() == 0
-
-        φ = mod_2pi(φ + φ0)
 
         return φ, ldj_total
 
@@ -187,10 +183,10 @@ class SpinCouplingFlow(Flow):
         m1, m2 = checker, ~checker
         m1[0] = False  # don't transform φ0 or things break!
 
-        # NOTE: if we make angles relative to φ0 and don't also mask φ0 such that
-        # it never gets transformed, we break the triangular Jacobian structure!!
+        # Make all angles relative to φ0
+        # NOTE: take φ0 = π since transformations maximally flexible here
         φ0, _ = z.tensor_split([1], dim=1)
-        φ = mod_2pi(z - φ0)
+        φ = mod_2pi(z - φ0 + π)
 
         ldj_total = 0.0
         for transform, mask in zip(self.transforms, cycle((m1, m2))):
@@ -206,7 +202,9 @@ class SpinCouplingFlow(Flow):
 
             ldj_total += ldj
 
-        φ = mod_2pi(φ + φ0)
+            φ = mod_2pi(φ + π / 2)
+
+        φ = mod_2pi(φ + φ0 - π)
 
         return φ, ldj_total
 
