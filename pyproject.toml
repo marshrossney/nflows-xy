@@ -27,6 +27,11 @@ black = "^23.9.1"
 flake8 = "^6.1.0"
 pytest = "^7.4.2"
 
+
+[tool.poetry.group.notebook.dependencies]
+jupyterlab = "^4.0.8"
+matplotlib = "^3.8.1"
+
 [tool.poetry.scripts]
 nfxy = "nflows_xy.scripts.cli:cli"
 
