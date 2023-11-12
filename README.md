@@ -38,11 +38,11 @@ $ poetry run nfxy SUBCOMMAND -c CONFIG_FILE_PATH --ADDITIONAL_ARGS
 
 The important subcommands are
 - `train`: Trains a new model from scratch
-- `hmc`: Use the trained model in the [flow-HMC algorithm](https://arxiv.org/abs/2302.08408) (often called 'field transformation' HMC).
+- `fhmc`: Use the trained model in the [flow-HMC algorithm](https://arxiv.org/abs/2302.08408) (often called 'field transformation' HMC).
 
 Other subcommands are
-- `test`: Computes some test metrics on a trained model. These metrics are computed whenever `train` or `hmc` are run, but it can be useful to run them separately
-- `hmc-benchmark`: This just runs HMC without any flow/field transformation.
+- `test`: Computes some test metrics on a trained model. These metrics are computed whenever `train` or `fhmc` are run, but it can be useful to run them separately
+- `hmc`: This just runs HMC without any flow/field transformation.
 
 Example `.yaml` configuration files can be found in the `examples` folder.
 
@@ -71,13 +71,13 @@ subcommands:
     train
     test
     hmc
-    hmc-benchmark
+    fhmc
 ```
 
 For a specific subcommand...
 ```sh
-$ poetry run nfxy hmc-benchmark --help
-usage: nfxy [options] hmc-benchmark [-h] [--target CONFIG] --target.beta BETA --target.lattice_size LATTICE_SIZE --target.lattice_dim LATTICE_DIM [--hmc CONFIG] --hmc.n_replica N_REPLICA
+$ poetry run nfxy hmc --help
+usage: nfxy [options] hmc [-h] [--target CONFIG] --target.beta BETA --target.lattice_size LATTICE_SIZE --target.lattice_dim LATTICE_DIM [--hmc CONFIG] --hmc.n_replica N_REPLICA
                                          --hmc.n_traj N_TRAJ --hmc.step_size STEP_SIZE [--hmc.n_therm N_THERM] [--hmc.traj_length TRAJ_LENGTH] [-c CONFIG] [--print_config[=flags]] [-o OUTPUT]
 
 Run a 'vanilla' Hybrid Monte Carlo simulation.
@@ -140,10 +140,6 @@ For more details see the [jsonargparse docs](https://jsonargparse.readthedocs.io
 
 ## To do list
 
-- [ ] Mobius or projection transforms to wrapped Cauchy
-- [ ] Hierarchical coupling flow
 - [ ] Cauchy distributed momenta
-- [ ] Visualisation of correlation between E[log w] and force
-- [ ] Spline transforms with inverse
-- [ ] Inverse of the sigmoid transforms
-- [ ] Reduced variance loss function
+- [ ] Reduced variance loss function (requires inverse of sigmoid transformations)
+- [ ] Rational Quadratic Spline transformations with inverse
