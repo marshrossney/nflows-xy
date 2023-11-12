@@ -135,6 +135,7 @@ class SamplingDirectory(_ExistingDirectory):
     _training_config_file = "training_config.yaml"
     _sample_file = "sample.pt"
     _metrics_file = "metrics.csv"
+    _history_file = "history.csv"
 
     @classmethod
     def new(
@@ -144,6 +145,7 @@ class SamplingDirectory(_ExistingDirectory):
         sample: Tensor,
         config: Namespace,
         metrics: pd.Series,
+        history: pd.DataFrame,
     ) -> "SamplingDirectory":
         path = path if isinstance(path, Path) else Path(path)
         path = path.resolve()
@@ -180,6 +182,10 @@ class SamplingDirectory(_ExistingDirectory):
         logger.info(f"Saving metrics to {metrics_file}")
         metrics.to_csv(metrics_file)
 
+        history_file = path / cls._history_file
+        logger.info(f"Saving history to {history_file}")
+        history.to_csv(history_file)
+
         return cls(path)
 
     @property
@@ -198,6 +204,10 @@ class SamplingDirectory(_ExistingDirectory):
     def metrics_file(self) -> Path:
         return self.path / self._metrics_file
 
+    @property
+    def history_file(self) -> Path:
+        return self.path / self._history_file
+
     def load_config(self) -> Namespace:
         from nflows_xy.scripts.hmc import parser
 
@@ -205,3 +215,6 @@ class SamplingDirectory(_ExistingDirectory):
 
     def load_sample(self) -> Tensor:
         return torch.load(self.sample_file)
+
+    def load_history(self) -> Tensor:
+        return pd.read_csv(self.history_file, index_col=[0, 1])

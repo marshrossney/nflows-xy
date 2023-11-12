@@ -1,5 +1,4 @@
 from copy import deepcopy
-from dataclasses import asdict
 from pathlib import Path
 import logging
 
@@ -53,7 +52,11 @@ def main(config: Namespace) -> None:
 
     config = parser.instantiate_classes(config)
 
-    φ, metrics = hmc(config.target, **config.hmc)
+    φ, history = hmc(config.target, **config.hmc)
+
+    hmc_metrics = {"A_traj": history.loc["accept_traj"].values.mean()}
+    if "accept_wind" in history.index:
+        hmc_metrics |= {"A_wind": history.loc["accept_wind"].values.mean()}
 
     S = config.target(φ)
     Γ_S = autocorrelations(S)
@@ -81,7 +84,7 @@ def main(config: Namespace) -> None:
     print(fig)
 
     metrics = pd.Series(
-        asdict(metrics)
+        hmc_metrics
         | {
             "corr_len": ξ.item(),
             "tau_int_S": Γ_S.integrated,
@@ -97,4 +100,5 @@ def main(config: Namespace) -> None:
             sample=φ,
             config=config_copy,
             metrics=metrics,
+            history=history,
         )

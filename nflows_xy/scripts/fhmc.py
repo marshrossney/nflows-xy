@@ -1,5 +1,4 @@
 from copy import deepcopy
-from dataclasses import asdict
 from pathlib import Path
 import logging
 
@@ -96,7 +95,11 @@ def main(config: Namespace) -> None:
     print(make_banner("Test metrics"))
     print(test_metrics.describe())
 
-    φ, hmc_metrics = hmc(PullbackAction(flow, target), **config.hmc)
+    φ, history = hmc(PullbackAction(flow, target), **config.hmc)
+
+    hmc_metrics = {"A_traj": history.loc["accept_traj"].values.mean()}
+    if "accept_wind" in history.index:
+        hmc_metrics |= {"A_wind": history.loc["accept_wind"].values.mean()}
 
     S = target(φ)
     Γ_S = autocorrelations(S)
@@ -124,7 +127,7 @@ def main(config: Namespace) -> None:
 
     metrics = pd.Series(
         test_metrics.median().to_dict()
-        | asdict(hmc_metrics)
+        | hmc_metrics
         | {
             "corr_len": ξ.item(),
             "tau_int_S": Γ_S.integrated,
@@ -140,4 +143,5 @@ def main(config: Namespace) -> None:
             sample=φ,
             config=config_copy,
             metrics=metrics,
+            history=history,
         )
